@@ -3,6 +3,8 @@
 #include <d3d11.h>
 #include <wrl/client.h>
 
+
+
 class Game
 {
 public:
@@ -16,6 +18,11 @@ public:
 	void Update(float deltaTime, float totalTime);
 	void Draw(float deltaTime, float totalTime);
 	void OnResize();
+
+	// ImGui
+	void ImGuiInitialize();
+	void ImGuiUpdate(float deltaTime);
+	void ImGuiBuildUI();
 
 private:
 

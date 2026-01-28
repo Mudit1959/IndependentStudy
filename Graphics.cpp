@@ -1,6 +1,7 @@
 #include "Graphics.h"
 #include <dxgi1_6.h>
 
+
 // Tell the drivers to use high-performance GPU in multi-GPU systems (like laptops)
 extern "C"
 {
@@ -153,6 +154,26 @@ HRESULT Graphics::Initialize(unsigned int windowWidth, unsigned int windowHeight
 	// various buffers we need for rendering. This call 
 	// will also set the appropriate viewport.
 	ResizeBuffers(windowWidth, windowHeight);
+
+
+	// Mudit Verma - Constant Ring Buffer
+	// Constant buffers must be a multiple of 256 bytes big
+	cbSizeBytes = 256 * 1000;
+	cbOffsetBytes = 0; // Buffer is empty
+	
+	// The constant buffer, like any other buffer requires a buffer description
+	cbSizeBytes = ((cbSizeBytes + 255) / 256) * 256; // To make certain the size is a multiple of 256
+	D3D11_BUFFER_DESC ringBufferDesc = {};
+	ringBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER; // What should this data be treated as - a constant buffer
+	ringBufferDesc.Usage = D3D11_USAGE_DYNAMIC; // Does the data change from frame to frame - yes
+	ringBufferDesc.ByteWidth = cbSizeBytes; // What is the size - an arbitrarily large multiple of 256 - 256KB
+	ringBufferDesc.CPUAccessFlags = D3D10_CPU_ACCESS_WRITE; // CPU should be allowed to change data - MAP_WRITE
+	ringBufferDesc.MiscFlags = 0;
+	ringBufferDesc.StructureByteStride = 0;
+
+	// Create buffer
+	Device->CreateBuffer(&ringBufferDesc, 0, ConstBufferHeap.GetAddressOf());
+
 
 #if defined(DEBUG) || defined(_DEBUG)
 	// If we're in debug mode, set up the info queue to
@@ -319,4 +340,68 @@ void Graphics::PrintDebugMessages()
 
 	// Clear any messages we've printed
 	InfoQueue->ClearStoredMessages();
+}
+
+/// <summary>
+/// Bind constants to be used by shaders within a single large ring buffer
+/// </summary>
+/// <param name="data">Pointer to the constant data itself - void* pointer used because data type is unknown</param>
+/// <param name="dataSizeInBytes">Size of the incoming data</param>
+/// <param name="shaderType">Type of shader that'll use the constant buffers</param>
+/// <param name="registerSlot">The slot for the constant buffer</param>
+void Graphics::FillAndBindNextConstantBuffer(void* data, unsigned int dataSizeInBytes, D3D11_SHADER_TYPE shaderType, unsigned int registerSlot) 
+{
+	unsigned int incomingSize = ((dataSizeInBytes + 255) / 256) * 256; // Pad the incoming data to fit 256 byte blocks
+
+	// If copying the incoming data will result in an overflow, *circle* back to the beginning BEFORE the copy
+	if (incomingSize + cbOffsetBytes > cbSizeBytes) { cbOffsetBytes = 0; } 
+
+	// 2. Copy the data over, by first mapping the storage size, and them using memcpy
+	// Mapping -> Specify the buffer to write into and the kind of data being written(can be disposed, should not be disposed)
+	D3D11_MAPPED_SUBRESOURCE map{};
+	Context->Map(
+		ConstBufferHeap.Get(),
+		0,
+		D3D11_MAP_WRITE_NO_OVERWRITE,
+		0,
+		&map);
+
+	// memcpy -> Make sure data is written into the right address, remember we just checked if the incoming data will fit, 
+	// Calculations for the address to be written to still need to be done!
+	void* uploadAddress = reinterpret_cast<void*>((UINT64)map.pData + cbOffsetBytes);
+	memcpy(uploadAddress, data, dataSizeInBytes);
+
+	// UNMAP
+	Context->Unmap(ConstBufferHeap.Get(), 0);
+
+	// 3. Tell the GPU the data is ready to use, known as BINDING, by specifying byte boundaries. 
+	// This is where 11.1 version is crucial. I cannot fathom why, I have been told it is
+	// Since we work with HLSL, only 16-byte boundaries need to be taken care of.
+	unsigned int existingConstant = cbOffsetBytes / 16; // How many 16 byte blocks are occupied already?
+	unsigned int incomingConstant = incomingSize / 16; // How many 16 byte blocks will be occupied?
+	// Use a switch statement for the vertex and pixel shaders that follow the 16-byte boundary rule.
+	switch (shaderType)
+	{
+	case D3D11_VERTEX_SHADER:
+		Context->VSSetConstantBuffers1(
+			registerSlot,
+			1,
+			ConstBufferHeap.GetAddressOf(),
+			&existingConstant,
+			&incomingConstant);
+		break;
+
+	case D3D11_PIXEL_SHADER:
+		Context->PSSetConstantBuffers1(
+			registerSlot,
+			1,
+			ConstBufferHeap.GetAddressOf(),
+			&existingConstant,
+			&incomingConstant);
+		break;
+
+	}
+
+	// 4. Update the offset value - tells the next free space to go to after 256 byte padding has been done. 
+	cbOffsetBytes += incomingSize;
 }
