@@ -1,7 +1,9 @@
 #pragma once
 #include "DirectXMath.h"
 
-struct ExtraVertexData 
+
+
+struct ExtraVertexData // Vertex Constant Buffer Data
 {
 	DirectX::XMFLOAT4X4 world; 
 	DirectX::XMFLOAT4X4 worldInv;

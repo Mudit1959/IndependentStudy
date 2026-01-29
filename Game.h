@@ -2,7 +2,12 @@
 
 #include <d3d11.h>
 #include <wrl/client.h>
+#include <vector>
 
+// Classes 
+#include "Mesh.h"
+#include "Material.h"
+#include "Entity.h"
 
 
 class Game
@@ -27,21 +32,28 @@ public:
 private:
 
 	// Initialization helper methods - feel free to customize, combine, remove, etc.
-	void LoadShaders();
+	void LoadShadersCreateMaterials();
 	void CreateGeometry();
+	void CreateEntities();
+	void LoadVertexShader(const std::wstring& path);
+	void LoadPixelShader(const std::wstring& path);
+	void DefaultInputLayout(ID3DBlob* vertexShaderBlob);
 
 	// Note the usage of ComPtr below
 	//  - This is a smart pointer for objects that abide by the
 	//     Component Object Model, which DirectX objects do
 	//  - More info here: https://github.com/Microsoft/DirectXTK/wiki/ComPtr
 
-	// Buffers to hold actual geometry data
-	Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer;
-	Microsoft::WRL::ComPtr<ID3D11Buffer> indexBuffer;
+	// Meshes
+	std::shared_ptr<Mesh> rectMesh;
+	std::vector<std::shared_ptr<Material>> materials;
+
+	// Shaders - input layouts, vertex shaders, pixel shaders - stored in lists, one for each type
+	std::vector<Microsoft::WRL::ComPtr<ID3D11InputLayout>> inputLayouts; // Different input layouts based on topology and meshes' vertex data structure
+	std::vector<Microsoft::WRL::ComPtr<ID3D11VertexShader>> vertexShaders;
+	std::vector<Microsoft::WRL::ComPtr<ID3D11PixelShader>> pixelShaders;
 
 	// Shaders and shader-related constructs
-	Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShader;
-	Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader;
-	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout;
+	
 };
 

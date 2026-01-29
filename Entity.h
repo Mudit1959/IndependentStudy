@@ -1,23 +1,23 @@
 #pragma once
-
-#include <d3d11.h>
-#include <wrl/client.h>
+/*
+* Entities are items rendered on screen
+* Each item has its own geometry (Mesh) and material (shaders and input layout -> including texture and sampler states to be created + binded)
+* Shaders need to be created at start up, and set before the item is drawn to the screen
+*/ 
+#include "Mesh.h"
+#include "Material.h"
+#include "Graphics.h"
 
 class Entity 
 {
-public:
-	Entity();
-	
-	
-	void SetVS(Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader);
-	void SetPS(Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShader);
-	Microsoft::WRL::ComPtr<ID3D11VertexShader> GetVS;
-	Microsoft::WRL::ComPtr<ID3D11PixelShader> GetPS;
 
+public:
+	Entity(std::shared_ptr<Mesh> inMesh, std::shared_ptr<Material> inMaterial);
+	
 	void Draw();
 
 private:
-	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout;
-	Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader;
-	Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShader;
+	std::shared_ptr<Mesh> mesh;
+	std::shared_ptr<Material> material;
+
 };
