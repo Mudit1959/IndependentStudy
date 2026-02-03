@@ -164,6 +164,7 @@
     </FxCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Camera.cpp" />
     <ClCompile Include="Entity.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="Graphics.cpp" />
@@ -180,10 +181,12 @@
     <ClCompile Include="Material.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="PathHelpers.cpp" />
+    <ClCompile Include="Transform.cpp" />
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BufferStructs.h" />
+    <ClInclude Include="Camera.h" />
     <ClInclude Include="Entity.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="Graphics.h" />
@@ -199,6 +202,7 @@
     <ClInclude Include="Material.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="PathHelpers.h" />
+    <ClInclude Include="Transform.h" />
     <ClInclude Include="Vertex.h" />
     <ClInclude Include="Window.h" />
   </ItemGroup>
@@ -223,6 +227,9 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
     </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ShaderInclude.hlsli" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

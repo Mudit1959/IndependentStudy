@@ -14,3 +14,5 @@ void Entity::Draw()
 
 	mesh->Draw();
 }
+
+Transform* Entity::GetTransform() { return &transform; }

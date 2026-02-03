@@ -7,17 +7,19 @@
 #include "Mesh.h"
 #include "Material.h"
 #include "Graphics.h"
+#include "Transform.h"
 
 class Entity 
 {
 
 public:
 	Entity(std::shared_ptr<Mesh> inMesh, std::shared_ptr<Material> inMaterial);
-	
+	Transform* GetTransform();
 	void Draw();
 
 private:
 	std::shared_ptr<Mesh> mesh;
 	std::shared_ptr<Material> material;
+	Transform transform;
 
 };

@@ -8,7 +8,7 @@
 #include "Mesh.h"
 #include "Material.h"
 #include "Entity.h"
-
+#include "Camera.h"
 
 class Game
 {
@@ -35,9 +35,12 @@ private:
 	void LoadShadersCreateMaterials();
 	void CreateGeometry();
 	void CreateEntities();
+	void CreateCamera();
 	void LoadVertexShader(const std::wstring& path);
 	void LoadPixelShader(const std::wstring& path);
 	void DefaultInputLayout(ID3DBlob* vertexShaderBlob);
+
+	void SetConstantsForFrame(Entity e);
 
 	// Note the usage of ComPtr below
 	//  - This is a smart pointer for objects that abide by the
@@ -46,6 +49,7 @@ private:
 
 	// Meshes
 	std::shared_ptr<Mesh> rectMesh;
+	std::shared_ptr<Camera> camera;
 	std::vector<std::shared_ptr<Material>> materials;
 
 	// Shaders - input layouts, vertex shaders, pixel shaders - stored in lists, one for each type

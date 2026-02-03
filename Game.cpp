@@ -4,6 +4,7 @@
 #include "Input.h"
 #include "PathHelpers.h"
 #include "Window.h"
+#include "BufferStructs.h"
 
 // ImGui header files
 #include "ImGui/imgui.h"
@@ -23,6 +24,7 @@
 using namespace DirectX;
 
 std::vector<Entity> entityList;
+float rectPos[3] = {0.0f, 0.0f, 0.0f};
 
 // --------------------------------------------------------
 // The constructor is called after the window and graphics API
@@ -37,6 +39,11 @@ Game::Game()
 	CreateGeometry();
 	CreateEntities();
 
+	Game::ImGuiInitialize();
+
+
+	CreateCamera();
+
 	// Set initial graphics API state
 	//  - These settings persist until we change them
 	//  - Some of these, like the primitive topology & input layout, probably won't change
@@ -48,7 +55,7 @@ Game::Game()
 		Graphics::Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	}
 
-	Game::ImGuiInitialize();
+	
 }
 
 void Game::ImGuiInitialize() 
@@ -80,9 +87,10 @@ void Game::ImGuiUpdate(float deltaTime)
 
 void Game::ImGuiBuildUI() 
 {
-	ImGui::Begin("Testing...");
-	if (ImGui::TreeNode("Hello There!")) 
+	ImGui::Begin("Hello There!");
+	if (ImGui::TreeNode("Rectangle World Pos")) 
 	{
+		ImGui::DragFloat3("Position", rectPos, 0.001f, 0.0f, 10.0f, "%.3f");
 		ImGui::TreePop();
 	}
 	ImGui::End();
@@ -221,8 +229,13 @@ void Game::CreateGeometry()
 void Game::CreateEntities()
 {
 	entityList.push_back(Entity(rectMesh, materials[0]));
+	entityList[0].GetTransform()->SetScale(20.0f, 20.0f, 1.0f);
 }
 
+void Game::CreateCamera() 
+{
+	camera = std::make_shared<Camera>(0.0f, 0.0f, -10.0f, Window::Width(), Window::Height(), Window::AspectRatio());
+}
 
 // --------------------------------------------------------
 // Handle resizing to match the new window size
@@ -230,7 +243,10 @@ void Game::CreateEntities()
 // --------------------------------------------------------
 void Game::OnResize()
 {
-	
+	if (camera != NULL) 
+	{
+		camera->UpdateProjMatrix(Window::AspectRatio());
+	}
 }
 
 
@@ -240,6 +256,11 @@ void Game::OnResize()
 void Game::Update(float deltaTime, float totalTime)
 {
 	Game::ImGuiUpdate(deltaTime);
+
+	entityList[0].GetTransform()->SetPosition(DirectX::XMFLOAT3(rectPos[0], rectPos[1], rectPos[2]));
+	entityList[0].GetTransform()->CalculateWorldMatrix();
+
+	camera->Update();
 
 	// Example input checking: Quit if the escape key is pressed
 	if (Input::KeyDown(VK_ESCAPE))
@@ -262,12 +283,15 @@ void Game::Draw(float deltaTime, float totalTime)
 		Graphics::Context->ClearDepthStencilView(Graphics::DepthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 	}
 
+	
+
 	// DRAW geometry
 	// - These steps are generally repeated for EACH object you draw
 	// - Other Direct3D calls will also be necessary to do more complex things
 	{
 		for (int i = 0; i < entityList.size(); i++) 
 		{
+			SetConstantsForFrame(entityList[i]);
 			entityList[i].Draw();
 		}
 	}
@@ -294,5 +318,14 @@ void Game::Draw(float deltaTime, float totalTime)
 	}
 }
 
+void Game::SetConstantsForFrame(Entity e) 
+{
+	VertexShaderConstants vsData = {};
+	vsData.world = e.GetTransform()->GetWorldMatrix();
+	vsData.worldInvT = e.GetTransform()->GetWorldInverseMatrix();
+	vsData.proj = camera->GetProjMatrix();
+	vsData.view = camera->GetViewMatrix();
 
+	Graphics::FillAndBindNextConstantBuffer(&vsData, sizeof(VertexShaderConstants), D3D11_VERTEX_SHADER, 0);
+}
 
