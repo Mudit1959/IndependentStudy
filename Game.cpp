@@ -25,6 +25,7 @@ using namespace DirectX;
 
 std::vector<Entity> entityList;
 float rectPos[3] = { 0.0f, 0.0f, 0.0f };
+float cameraPos[3] = { 0.0f, 0.0f, 0.0f };
 
 // --------------------------------------------------------
 // The constructor is called after the window and graphics API
@@ -90,7 +91,12 @@ void Game::ImGuiBuildUI()
 	ImGui::Begin("Hello There!");
 	if (ImGui::TreeNode("Rectangle World Pos")) 
 	{
-		ImGui::DragFloat3("Position", &rectPos[0], 0.001f, 0.0f, 10.0f, "%.3f");
+		ImGui::DragFloat3("", &rectPos[0], 0.001f, -50.0f, 50.0f, "%.3f");
+		ImGui::TreePop();
+	}
+	if (ImGui::TreeNode("Camera Pos"))
+	{
+		ImGui::DragFloat3("", &cameraPos[0], 0.001f, -50.0f, 50.0f, "%.3f");
 		ImGui::TreePop();
 	}
 	ImGui::End();
@@ -234,7 +240,8 @@ void Game::CreateEntities()
 void Game::CreateCamera()
 {
 	camera = std::make_shared<Camera>(Window::AspectRatio());
-	camera->GetTransform()->MoveAbsolute(0.0f, 0.0f, -10.0f);
+	cameraPos[2] -= 10.0f;
+	camera->GetTransform()->SetPosition(DirectX::XMFLOAT3(&cameraPos[0]));
 }
 
 // --------------------------------------------------------
@@ -258,7 +265,8 @@ void Game::Update(float deltaTime, float totalTime)
 	entityList[0].GetTransform()->Rotate(0.0f, 0.0f, deltaTime * DirectX::XM_PI / 18.0f);
 	entityList[0].GetTransform()->CalculateWorldMatrix();
 
-	camera->GetTransform()->MoveAbsolute(0.001f, 0.0f, 0.0f);
+	camera->GetTransform()->SetPosition(DirectX::XMFLOAT3(&cameraPos[0]));
+
 	camera->Update();
 
 	// Example input checking: Quit if the escape key is pressed

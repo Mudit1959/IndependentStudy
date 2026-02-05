@@ -10,6 +10,9 @@ Camera::Camera(float newAspectRatio)
 	view = DirectX::XMFLOAT4X4();
 	proj = DirectX::XMFLOAT4X4();
 
+	CalculateProjMatrix();
+	CalculateViewMatrix();
+
 }
 
 void Camera::Resize(float newAspectRatio) 
@@ -33,7 +36,6 @@ void Camera::CalculateViewMatrix()
 
 void Camera::Update() 
 {
-	CalculateProjMatrix();
 	CalculateViewMatrix();
 }
 
