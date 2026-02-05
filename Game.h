@@ -8,7 +8,7 @@
 #include "Mesh.h"
 #include "Material.h"
 #include "Entity.h"
-//#include "Camera.h"
+#include "Camera.h"
 
 class Game
 {
@@ -49,7 +49,7 @@ private:
 
 	// Meshes
 	std::shared_ptr<Mesh> rectMesh;
-	//std::shared_ptr<Camera> camera;
+	std::shared_ptr<Camera> camera;
 	std::vector<std::shared_ptr<Material>> materials;
 
 	// Shaders - input layouts, vertex shaders, pixel shaders - stored in lists, one for each type

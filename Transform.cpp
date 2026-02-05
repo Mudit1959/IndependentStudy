@@ -3,6 +3,7 @@
 Transform::Transform() 
 {
 	edited = 0;
+	orientEdited = 0;
 
 	DirectX::XMMATRIX initialMatrix = DirectX::XMMatrixIdentity();
 	DirectX::XMStoreFloat4x4(&world, initialMatrix);
@@ -22,13 +23,14 @@ void Transform::SetPosition(float x, float y, float z) { DirectX::XMStoreFloat3(
 void Transform::SetScale(DirectX::XMFLOAT3 inScale) { DirectX::XMStoreFloat3(&scale, DirectX::XMLoadFloat3(&inScale)); edited++; }
 void Transform::SetScale(float x, float y, float z) { DirectX::XMStoreFloat3(&scale, DirectX::XMVectorSet(x, y, z, 0.0f)); edited++; }
 
-void Transform::SetRotation(DirectX::XMFLOAT3 inRot) { DirectX::XMStoreFloat3(&rotation, DirectX::XMLoadFloat3(&inRot)); edited++; }
-void Transform::SetRotation(float x, float y, float z) { DirectX::XMStoreFloat3(&rotation, DirectX::XMVectorSet(x, y, z, 0.0f)); edited++; }
+void Transform::SetRotation(DirectX::XMFLOAT3 inRot) { DirectX::XMStoreFloat3(&rotation, DirectX::XMLoadFloat3(&inRot)); edited++; orientEdited++; }
+void Transform::SetRotation(float x, float y, float z) { DirectX::XMStoreFloat3(&rotation, DirectX::XMVectorSet(x, y, z, 0.0f)); edited++; orientEdited++; }
 
 
 DirectX::XMFLOAT3 Transform::GetPosition() { return position; }
 DirectX::XMFLOAT3 Transform::GetRotation() { return rotation; }
 DirectX::XMFLOAT3 Transform::GetScale() { return scale; }
+DirectX::XMFLOAT3 Transform::GetForward() { if (orientEdited != 0) { CalculateOrientation(); } return relForward; }
 DirectX::XMFLOAT4X4 Transform::GetWorldMatrix() 
 {
 	if (edited != 0) { CalculateWorldMatrix(); } 
@@ -67,8 +69,8 @@ void Transform::MoveRelative(float x, float y, float z)
 	edited++; 
 }
 
-void Transform::Rotate(DirectX::XMFLOAT3 rotateBy) { DirectX::XMStoreFloat3(&rotation, DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&rotation), DirectX::XMLoadFloat3(&rotateBy)));  CalculateOrientation();  edited++; }
-void Transform::Rotate(float x, float y, float z) { DirectX::XMStoreFloat3(&rotation, DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&rotation), DirectX::XMVectorSet(x, y, z, 0.0f)));  CalculateOrientation();  edited++; }
+void Transform::Rotate(DirectX::XMFLOAT3 rotateBy) { DirectX::XMStoreFloat3(&rotation, DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&rotation), DirectX::XMLoadFloat3(&rotateBy)));  CalculateOrientation();  edited++; orientEdited++; }
+void Transform::Rotate(float x, float y, float z) { DirectX::XMStoreFloat3(&rotation, DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&rotation), DirectX::XMVectorSet(x, y, z, 0.0f)));  CalculateOrientation();  edited++; orientEdited++; }
 
 void Transform::Scale(DirectX::XMFLOAT3 scaleBy) { DirectX::XMStoreFloat3(&scale, DirectX::XMVectorMultiply(DirectX::XMLoadFloat3(&scale), DirectX::XMLoadFloat3(&scaleBy)));  edited++; }
 void Transform::Scale(float x, float y, float z) { DirectX::XMStoreFloat3(&scale, DirectX::XMVectorMultiply(DirectX::XMLoadFloat3(&scale), DirectX::XMVectorSet(x, y, z, 0.0f)));  edited++; }
@@ -92,4 +94,6 @@ void Transform::CalculateOrientation()
 	DirectX::XMStoreFloat3(&relRight, DirectX::XMVector3Rotate(DirectX::XMLoadFloat3(&relRight), quat));
 	DirectX::XMStoreFloat3(&relUp, DirectX::XMVector3Rotate(DirectX::XMLoadFloat3(&relUp), quat));
 	DirectX::XMStoreFloat3(&relForward, DirectX::XMVector3Rotate(DirectX::XMLoadFloat3(&relForward), quat));
+
+	orientEdited = 0;
 }

@@ -17,6 +17,7 @@ public:
 	DirectX::XMFLOAT3 GetPosition();
 	DirectX::XMFLOAT3 GetRotation();
 	DirectX::XMFLOAT3 GetScale();
+	DirectX::XMFLOAT3 GetForward();
 	DirectX::XMFLOAT4X4 GetWorldMatrix();
 	DirectX::XMFLOAT4X4 GetWorldInverseTMatrix();
 	
@@ -37,6 +38,6 @@ private:
 	DirectX::XMFLOAT3 scale, rotation, position; 
 	DirectX::XMFLOAT3 relUp, relRight, relForward;
 	DirectX::XMFLOAT4X4 world, worldInverseT;
-	int edited;
+	int edited, orientEdited;
 };
 

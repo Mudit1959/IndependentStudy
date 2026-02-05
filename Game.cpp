@@ -24,7 +24,7 @@
 using namespace DirectX;
 
 std::vector<Entity> entityList;
-float rectPos[3] = { -5.0f, 0.0f, 0.0f };
+float rectPos[3] = { 0.0f, 0.0f, 0.0f };
 
 // --------------------------------------------------------
 // The constructor is called after the window and graphics API
@@ -233,6 +233,8 @@ void Game::CreateEntities()
 
 void Game::CreateCamera()
 {
+	camera = std::make_shared<Camera>(Window::AspectRatio());
+	camera->GetTransform()->MoveAbsolute(0.0f, 0.0f, -10.0f);
 }
 
 // --------------------------------------------------------
@@ -241,6 +243,7 @@ void Game::CreateCamera()
 // --------------------------------------------------------
 void Game::OnResize()
 {
+	camera->Resize(Window::AspectRatio());
 }
 
 
@@ -252,8 +255,11 @@ void Game::Update(float deltaTime, float totalTime)
 	Game::ImGuiUpdate(deltaTime);
 
 	entityList[0].GetTransform()->SetPosition(DirectX::XMFLOAT3(&rectPos[0]));
+	entityList[0].GetTransform()->Rotate(0.0f, 0.0f, deltaTime * DirectX::XM_PI / 18.0f);
 	entityList[0].GetTransform()->CalculateWorldMatrix();
 
+	camera->GetTransform()->MoveAbsolute(0.001f, 0.0f, 0.0f);
+	camera->Update();
 
 	// Example input checking: Quit if the escape key is pressed
 	if (Input::KeyDown(VK_ESCAPE))
@@ -317,11 +323,13 @@ void Game::SetConstantsForFrame(Entity e)
 	vsData.world = e.GetTransform()->GetWorldMatrix();
 	vsData.worldInvT = e.GetTransform()->GetWorldInverseTMatrix();
 
-	DirectX::FXMMATRIX cameraView = DirectX::XMMatrixLookAtLH(DirectX::XMVectorSet(0.0f, 0.0f, -10.0f, 1.0f), DirectX::XMVectorSet(0.0f, 0.0f, 1.0f, 1.0f), DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 1.0f));
-	DirectX::XMStoreFloat4x4(&vsData.view, cameraView);
+	//DirectX::FXMMATRIX cameraView = DirectX::XMMatrixLookToLH(DirectX::XMVectorSet(0.0f, 0.0f, -10.0f, 1.0f), DirectX::XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f), DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 1.0f));
+	//DirectX::XMStoreFloat4x4(&vsData.view, cameraView);
+	vsData.view = camera->GetViewMatrix();
 	
-	DirectX::FXMMATRIX cameraProj = DirectX::XMMatrixPerspectiveFovLH(DirectX::XM_PIDIV4, Window::AspectRatio(), 0.01f, 400.0f);
-	DirectX::XMStoreFloat4x4(&vsData.proj, cameraProj);
+	//DirectX::FXMMATRIX cameraProj = DirectX::XMMatrixPerspectiveFovLH(DirectX::XM_PIDIV4, Window::AspectRatio(), 0.01f, 400.0f);
+	//DirectX::XMStoreFloat4x4(&vsData.proj, cameraProj);
+	vsData.proj = camera->GetProjMatrix();
 
 	Graphics::FillAndBindNextConstantBuffer(&vsData, sizeof(VertexShaderConstants), D3D11_VERTEX_SHADER, 0);
 }
