@@ -40,7 +40,7 @@ private:
 	void LoadPixelShader(const std::wstring& path);
 	void DefaultInputLayout(ID3DBlob* vertexShaderBlob);
 
-	void SetConstantsForFrame(Entity e);
+	void SetConstantsForFrame(Entity e, int kind);
 
 	// Note the usage of ComPtr below
 	//  - This is a smart pointer for objects that abide by the

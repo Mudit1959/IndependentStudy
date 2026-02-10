@@ -26,6 +26,10 @@ using namespace DirectX;
 std::vector<Entity> entityList;
 float rectPos[3] = { 0.0f, 0.0f, 0.0f };
 float cameraPos[3] = { 0.0f, 0.0f, 0.0f };
+float widthHeight[2] = { 0.5f, 0.5f };
+float offset[2] = { 0.0f, 0.0f };
+
+
 
 // --------------------------------------------------------
 // The constructor is called after the window and graphics API
@@ -91,12 +95,24 @@ void Game::ImGuiBuildUI()
 	ImGui::Begin("Hello There!");
 	if (ImGui::TreeNode("Rectangle World Pos")) 
 	{
-		ImGui::DragFloat3("", &rectPos[0], 0.001f, -50.0f, 50.0f, "%.3f");
+		ImGui::DragFloat3("", &rectPos[0], 0.01f, -50.0f, 50.0f, "%.3f");
+		ImGui::TreePop();
+	}
+	if (ImGui::TreeNode("Rectangle Half Dimensions"))
+	{
+		ImGui::DragFloat("Half-Width", &widthHeight[0], 0.1f, 0.5f, 500.0f, "%.3f");
+		ImGui::DragFloat("Half-Height", &widthHeight[1], 0.1f, 0.5f, 500.0f, "%.3f");
 		ImGui::TreePop();
 	}
 	if (ImGui::TreeNode("Camera Pos"))
 	{
-		ImGui::DragFloat3("", &cameraPos[0], 0.001f, -50.0f, 50.0f, "%.3f");
+		ImGui::DragFloat3("", &cameraPos[0], 0.01f, -50.0f, 50.0f, "%.3f");
+		ImGui::TreePop();
+	}
+	if (ImGui::TreeNode("Rectangle Screen Pixel Offset"))
+	{
+		ImGui::DragFloat("X", &offset[0], 0.1f, 0.5f, 500.0f, "%.3f");
+		ImGui::DragFloat("Y", &offset[1], 0.1f, 0.5f, 500.0f, "%.3f");
 		ImGui::TreePop();
 	}
 	ImGui::End();
@@ -119,15 +135,15 @@ Game::~Game()
 void Game::LoadVertexShader(const std::wstring& path) 
 {
 	vertexShaders.push_back(Microsoft::WRL::ComPtr<ID3D11VertexShader>());
+	
+	ID3DBlob* vertexShaderBlob;
 
 	// BLOb -> Binary Large Object files! Basically huge chunks of data of the compiled shader bytecode
 	// We basically plop this data into a buffer to read from.
 	// This is to create the vertex shader and associated input layout properly.
 	// Using Chris Cascioli's FixPath(), to ensure correct relative file path navigation - Note 'L' for wide strings!
 
-	ID3DBlob* vertexShaderBlob;
-
-	D3DReadFileToBlob(FixPath(path).c_str(), &vertexShaderBlob);
+	HRESULT check = D3DReadFileToBlob(FixPath(path).c_str(), &vertexShaderBlob);
 
 	Graphics::Device->CreateVertexShader(
 		vertexShaderBlob->GetBufferPointer(),	// Point to the blob's data - stored in a "buffer"
@@ -136,10 +152,9 @@ void Game::LoadVertexShader(const std::wstring& path)
 		vertexShaders[vertexShaders.size() - 1].GetAddressOf());			// The address of the ID3D11VertexShader pointer
 
 
-	// Different methods for each input layout creation - use an if statement to cycle through different methods
-	// ALL INPUT LAYOUTS NEED THE VERTEX SHADER's BLOB for creation
-	if (path == L"VertexShader.cso") { Game::DefaultInputLayout(vertexShaderBlob); }
+	Game::DefaultInputLayout(vertexShaderBlob);
 }
+
 
 void Game::LoadPixelShader(const std::wstring& path) 
 {
@@ -194,6 +209,7 @@ void Game::LoadShadersCreateMaterials()
 	
 	Game::LoadVertexShader(L"VertexShader.cso");
 	Game::LoadPixelShader(L"PixelShader.cso");
+	
 
 	// At this stage -> 
 	// Vertex Shaders - 1 
@@ -202,6 +218,10 @@ void Game::LoadShadersCreateMaterials()
 
 	materials.push_back(std::make_shared<Material>(vertexShaders[0], pixelShaders[0], inputLayouts[0]));
 
+	Game::LoadVertexShader(L"ButtonVS.cso");
+
+
+	materials.push_back(std::make_shared<Material>(vertexShaders[1], pixelShaders[0], inputLayouts[0]));
 	
 }
 
@@ -219,10 +239,10 @@ void Game::CreateGeometry()
 	// Vertices for a simple rectangle
 	Vertex vertices[] =
 	{
-		{ XMFLOAT3(+0.5f, +0.5f, +0.0f), red },
-		{ XMFLOAT3(+0.5f, -0.5f, +0.0f), blue },
-		{ XMFLOAT3(-0.5f, -0.5f, +0.0f), green },
-		{ XMFLOAT3(-0.5f, +0.5f, +0.0f), green }
+		{ XMFLOAT3(+1.0f, +1.0f, +0.0f), red },
+		{ XMFLOAT3(+1.0f, -1.0f, +0.0f), blue },
+		{ XMFLOAT3(-1.0f, -1.0f, +0.0f), green },
+		{ XMFLOAT3(-1.0f, +1.0f, +0.0f), green }
 	};
 
 	// Index Buffer - Order of vertices to use -> triangle topolgy -> 2 triangles rendered
@@ -234,7 +254,7 @@ void Game::CreateGeometry()
 
 void Game::CreateEntities()
 {
-	entityList.push_back(Entity(rectMesh, materials[0]));
+	entityList.push_back(Entity(rectMesh, materials[1]));
 }
 
 void Game::CreateCamera()
@@ -298,7 +318,7 @@ void Game::Draw(float deltaTime, float totalTime)
 	{
 		for (int i = 0; i < entityList.size(); i++) 
 		{
-			SetConstantsForFrame(entityList[i]);
+			SetConstantsForFrame(entityList[i], 1);
 			entityList[i].Draw();
 		}
 	}
@@ -325,20 +345,38 @@ void Game::Draw(float deltaTime, float totalTime)
 	}
 }
 
-void Game::SetConstantsForFrame(Entity e) 
+void Game::SetConstantsForFrame(Entity e, int kind) 
 {
-	VertexShaderConstants vsData = {};
-	vsData.world = e.GetTransform()->GetWorldMatrix();
-	vsData.worldInvT = e.GetTransform()->GetWorldInverseTMatrix();
+	if(kind == 0)
+	{
+		VertexShaderConstants vsData = {};
+		vsData.world = e.GetTransform()->GetWorldMatrix();
+		vsData.worldInvT = e.GetTransform()->GetWorldInverseTMatrix();
 
-	//DirectX::FXMMATRIX cameraView = DirectX::XMMatrixLookToLH(DirectX::XMVectorSet(0.0f, 0.0f, -10.0f, 1.0f), DirectX::XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f), DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 1.0f));
-	//DirectX::XMStoreFloat4x4(&vsData.view, cameraView);
-	vsData.view = camera->GetViewMatrix();
+		//DirectX::FXMMATRIX cameraView = DirectX::XMMatrixLookToLH(DirectX::XMVectorSet(0.0f, 0.0f, -10.0f, 1.0f), DirectX::XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f), DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 1.0f));
+		//DirectX::XMStoreFloat4x4(&vsData.view, cameraView);
+		vsData.view = camera->GetViewMatrix();
+
+		//DirectX::FXMMATRIX cameraProj = DirectX::XMMatrixPerspectiveFovLH(DirectX::XM_PIDIV4, Window::AspectRatio(), 0.01f, 400.0f);
+		//DirectX::XMStoreFloat4x4(&vsData.proj, cameraProj);
+		vsData.proj = camera->GetProjMatrix();
+
+		Graphics::FillAndBindNextConstantBuffer(&vsData, sizeof(VertexShaderConstants), D3D11_VERTEX_SHADER, 0);
+	}
+
+	if (kind == 1) 
+	{
+		ButtonShaderConstants buttonVSData = {};
+		buttonVSData.world = e.GetTransform()->GetWorldMatrix();
+		buttonVSData.worldInvT = e.GetTransform()->GetWorldInverseTMatrix();
+		buttonVSData.view = camera->GetViewMatrix();
+		buttonVSData.proj = camera->GetOrthoProjMatrix();
+		buttonVSData.objectWH = DirectX::XMFLOAT2(&widthHeight[0]);
+		buttonVSData.screenWH = DirectX::XMINT2(Window::Width(), Window::Height());
+		buttonVSData.cameraZ = -cameraPos[2];
+
+		Graphics::FillAndBindNextConstantBuffer(&buttonVSData, sizeof(ButtonShaderConstants), D3D11_VERTEX_SHADER, 0);
+	}
 	
-	//DirectX::FXMMATRIX cameraProj = DirectX::XMMatrixPerspectiveFovLH(DirectX::XM_PIDIV4, Window::AspectRatio(), 0.01f, 400.0f);
-	//DirectX::XMStoreFloat4x4(&vsData.proj, cameraProj);
-	vsData.proj = camera->GetProjMatrix();
-
-	Graphics::FillAndBindNextConstantBuffer(&vsData, sizeof(VertexShaderConstants), D3D11_VERTEX_SHADER, 0);
 }
 
