@@ -186,7 +186,9 @@ void Window::UpdateStats(float totalTime)
 		"    Height: " << windowHeight <<
 		"    FPS: " << fpsFrameCounter <<
 		"    Frame Time: " << mspf << "ms" <<
-		"    Graphics: " << Graphics::APIName();
+		"    Graphics: " << Graphics::APIName() <<
+		"	 MouseX: " << Input::GetMouseX() <<
+		"	 MouseY: " << Input::GetMouseY();
 
 	// Actually update the title bar and reset fps data
 	SetWindowText(windowHandle, output.str().c_str());

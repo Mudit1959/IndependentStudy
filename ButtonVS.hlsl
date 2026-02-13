@@ -5,12 +5,12 @@ cbuffer VSConstants : register(b0)
 {
     float4x4 world : WORLD_MATRIX;
     float4x4 worldInvT : WORLD_INVERSE_MATRIX;
-    float4x4 view : VIEW_MATRIX;
-    float4x4 proj : PROJECTION_MATRIX;
 	
     float2 objectWH;
+    float2 translateXY;
+    float4 colour;
     int2 screenWH;
-    float cameraZ;
+	
 }
 
 // --------------------------------------------------------
@@ -34,19 +34,18 @@ VertexToPixel main(VertexShaderInput input)
 	//   which we're leaving at 1.0 for now (this is more useful when dealing with 
 	//   a perspective projection matrix, which we'll get to in the future).
 	
-    //input.localPosition -= float4(1.0f, -1.0f, 0.0f, 0.0f);
+   
+    float rX = 2.0 / screenWH.x;
+    float rY = 2.0 / screenWH.y;
 	
-    float4x4 wvp = mul(proj, mul(view, world));
-    
+    input.localPosition = mul(world, float4(input.localPosition, 1.0f));
 	
-    input.localPosition.x /= screenWH.x;
-    input.localPosition.y /= screenWH.y;
+    input.localPosition.x *= rX;
+    input.localPosition.y *= rY;
 	
-    input.localPosition.x *= objectWH.x * 2;
-    input.localPosition.y *= objectWH.y * 2;
+    input.localPosition.x += -1 + (rX * translateXY.x);
+    input.localPosition.y += 1 - (rY * translateXY.y);
 	
-    input.localPosition.x -= 1;
-    input.localPosition.y += 1;
 	
     output.screenPosition = float4(input.localPosition, 1.0f);
     
@@ -54,7 +53,7 @@ VertexToPixel main(VertexShaderInput input)
 	// Pass the color through 
 	// - The values will be interpolated per-pixel by the rasterizer
 	// - We don't need to alter it here, but we do need to send it to the pixel shader
-    output.color = input.color;
+    output.color = colour;
 	
 	// Whatever we return will make its way through the pipeline to the
 	// next programmable stage we're using (the pixel shader for now)

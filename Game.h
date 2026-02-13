@@ -8,6 +8,8 @@
 #include "Mesh.h"
 #include "Material.h"
 #include "Entity.h"
+#include "RectangleShape.h"
+#include "CircleShape.h"
 #include "Camera.h"
 
 class Game
@@ -29,6 +31,9 @@ public:
 	void ImGuiUpdate(float deltaTime);
 	void ImGuiBuildUI();
 
+	//Mouse
+	void CheckMousePosition();
+
 private:
 
 	// Initialization helper methods - feel free to customize, combine, remove, etc.
@@ -40,7 +45,7 @@ private:
 	void LoadPixelShader(const std::wstring& path);
 	void DefaultInputLayout(ID3DBlob* vertexShaderBlob);
 
-	void SetConstantsForFrame(Entity e, int kind);
+	void SetConstantsForFrame(RectangleShape e, int kind);
 
 	// Note the usage of ComPtr below
 	//  - This is a smart pointer for objects that abide by the
@@ -48,7 +53,6 @@ private:
 	//  - More info here: https://github.com/Microsoft/DirectXTK/wiki/ComPtr
 
 	// Meshes
-	std::shared_ptr<Mesh> rectMesh;
 	std::shared_ptr<Camera> camera;
 	std::vector<std::shared_ptr<Material>> materials;
 

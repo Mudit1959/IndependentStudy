@@ -24,12 +24,17 @@
 using namespace DirectX;
 
 std::vector<Entity> entityList;
-float rectPos[3] = { 0.0f, 0.0f, 0.0f };
+
+std::vector<RectangleShape> rectList;
+std::vector<CircleShape> circleList;
+
+
+float rectPos[2] = { 10.0f, 10.0f};
 float cameraPos[3] = { 0.0f, 0.0f, 0.0f };
-float widthHeight[2] = { 0.5f, 0.5f };
-float offset[2] = { 0.0f, 0.0f };
+float scale[3] = { 0.5f, 0.5f, 1.0f };
+unsigned int screenWidth, screenHeight;
 
-
+DirectX::XMFLOAT4 hoverColor(1.0f, 0.0f, 0.0f, 1.0f);
 
 // --------------------------------------------------------
 // The constructor is called after the window and graphics API
@@ -40,9 +45,12 @@ Game::Game()
 	// Helper methods for loading shaders, creating some basic
 	// geometry to draw and some simple camera matrices.
 	//  - You'll be expanding and/or replacing these later
+	screenWidth = Window::Width();
+	screenHeight = Window::Height();
+
 	LoadShadersCreateMaterials();
 	CreateGeometry();
-	CreateEntities();
+	
 
 	Game::ImGuiInitialize();
 
@@ -95,24 +103,18 @@ void Game::ImGuiBuildUI()
 	ImGui::Begin("Hello There!");
 	if (ImGui::TreeNode("Rectangle World Pos")) 
 	{
-		ImGui::DragFloat3("", &rectPos[0], 0.01f, -50.0f, 50.0f, "%.3f");
+		ImGui::DragFloat2("", &rectPos[0], 0.01f, 0.0f, 50.0f, "%.3f");
 		ImGui::TreePop();
 	}
 	if (ImGui::TreeNode("Rectangle Half Dimensions"))
 	{
-		ImGui::DragFloat("Half-Width", &widthHeight[0], 0.1f, 0.5f, 500.0f, "%.3f");
-		ImGui::DragFloat("Half-Height", &widthHeight[1], 0.1f, 0.5f, 500.0f, "%.3f");
+		ImGui::DragFloat("Half-Width", &scale[0], 0.1f, 0.5f, 500.0f, "%.3f");
+		ImGui::DragFloat("Half-Height", &scale[1], 0.1f, 0.5f, 500.0f, "%.3f");
 		ImGui::TreePop();
 	}
 	if (ImGui::TreeNode("Camera Pos"))
 	{
 		ImGui::DragFloat3("", &cameraPos[0], 0.01f, -50.0f, 50.0f, "%.3f");
-		ImGui::TreePop();
-	}
-	if (ImGui::TreeNode("Rectangle Screen Pixel Offset"))
-	{
-		ImGui::DragFloat("X", &offset[0], 0.1f, 0.5f, 500.0f, "%.3f");
-		ImGui::DragFloat("Y", &offset[1], 0.1f, 0.5f, 500.0f, "%.3f");
 		ImGui::TreePop();
 	}
 	ImGui::End();
@@ -152,7 +154,7 @@ void Game::LoadVertexShader(const std::wstring& path)
 		vertexShaders[vertexShaders.size() - 1].GetAddressOf());			// The address of the ID3D11VertexShader pointer
 
 
-	Game::DefaultInputLayout(vertexShaderBlob);
+	if (path == L"VertexShader.cso") { Game::DefaultInputLayout(vertexShaderBlob); }
 }
 
 
@@ -230,31 +232,13 @@ void Game::LoadShadersCreateMaterials()
 // --------------------------------------------------------
 void Game::CreateGeometry()
 {
-	// Create some temporary variables to represent colors
-	// - Not necessary, just makes things more readable
-	XMFLOAT4 red = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
-	XMFLOAT4 green = XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
-	XMFLOAT4 blue = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
-
-	// Vertices for a simple rectangle
-	Vertex vertices[] =
-	{
-		{ XMFLOAT3(+1.0f, +1.0f, +0.0f), red },
-		{ XMFLOAT3(+1.0f, -1.0f, +0.0f), blue },
-		{ XMFLOAT3(-1.0f, -1.0f, +0.0f), green },
-		{ XMFLOAT3(-1.0f, +1.0f, +0.0f), green }
-	};
-
-	// Index Buffer - Order of vertices to use -> triangle topolgy -> 2 triangles rendered
-	unsigned int indices[] = { 0, 1, 2 , 0, 2, 3};
-
-	rectMesh = std::make_shared<Mesh>(vertices, 4, indices, 6);
-	
+	CreateEntities();
 }
 
 void Game::CreateEntities()
 {
-	entityList.push_back(Entity(rectMesh, materials[1]));
+	rectList.push_back(RectangleShape(materials[1]));
+	circleList.push_back(CircleShape(materials[1]));
 }
 
 void Game::CreateCamera()
@@ -271,6 +255,8 @@ void Game::CreateCamera()
 void Game::OnResize()
 {
 	camera->Resize(Window::AspectRatio());
+	screenWidth = Window::Width();
+	screenHeight = Window::Height();
 }
 
 
@@ -280,18 +266,29 @@ void Game::OnResize()
 void Game::Update(float deltaTime, float totalTime)
 {
 	Game::ImGuiUpdate(deltaTime);
-
-	entityList[0].GetTransform()->SetPosition(DirectX::XMFLOAT3(&rectPos[0]));
-	entityList[0].GetTransform()->Rotate(0.0f, 0.0f, deltaTime * DirectX::XM_PI / 18.0f);
-	entityList[0].GetTransform()->CalculateWorldMatrix();
+	
+	rectList[0].GetTransform()->SetScale(DirectX::XMFLOAT3(&scale[0]));
+	rectList[0].GetTransform()->Rotate(0.0f, 0.0f, deltaTime * DirectX::XM_PI / 18.0f);
+	rectList[0].GetTransform()->CalculateWorldMatrix();
 
 	camera->GetTransform()->SetPosition(DirectX::XMFLOAT3(&cameraPos[0]));
 
 	camera->Update();
 
+	Game::CheckMousePosition();
+
 	// Example input checking: Quit if the escape key is pressed
 	if (Input::KeyDown(VK_ESCAPE))
 		Window::Quit();
+}
+
+void Game::CheckMousePosition()
+{
+	float mouseX = Input::GetMouseX();
+	float mouseY = Input::GetMouseY();
+
+	if (mouseX < rectPos[0] - scale[0] || mouseX > rectPos[0] + scale[0] || mouseY < rectPos[1] || mouseY - scale[0] > rectPos[1] + scale[1]) { DirectX::XMStoreFloat4(&hoverColor, DirectX::XMVectorSet(0.0f, 0.0f, 1.0f, 1.0f)); }
+	else { DirectX::XMStoreFloat4(&hoverColor, DirectX::XMVectorSet(1.0f, 0.0f, 0.0f, 1.0f)); }
 }
 
 
@@ -316,10 +313,10 @@ void Game::Draw(float deltaTime, float totalTime)
 	// - These steps are generally repeated for EACH object you draw
 	// - Other Direct3D calls will also be necessary to do more complex things
 	{
-		for (int i = 0; i < entityList.size(); i++) 
+		for (int i = 0; i < rectList.size(); i++) 
 		{
-			SetConstantsForFrame(entityList[i], 1);
-			entityList[i].Draw();
+			SetConstantsForFrame(rectList[i], 1);
+			rectList[i].Draw();
 		}
 	}
 
@@ -345,7 +342,7 @@ void Game::Draw(float deltaTime, float totalTime)
 	}
 }
 
-void Game::SetConstantsForFrame(Entity e, int kind) 
+void Game::SetConstantsForFrame(RectangleShape e, int kind) 
 {
 	if(kind == 0)
 	{
@@ -369,11 +366,10 @@ void Game::SetConstantsForFrame(Entity e, int kind)
 		ButtonShaderConstants buttonVSData = {};
 		buttonVSData.world = e.GetTransform()->GetWorldMatrix();
 		buttonVSData.worldInvT = e.GetTransform()->GetWorldInverseTMatrix();
-		buttonVSData.view = camera->GetViewMatrix();
-		buttonVSData.proj = camera->GetOrthoProjMatrix();
-		buttonVSData.objectWH = DirectX::XMFLOAT2(&widthHeight[0]);
-		buttonVSData.screenWH = DirectX::XMINT2(Window::Width(), Window::Height());
-		buttonVSData.cameraZ = -cameraPos[2];
+		buttonVSData.objectWH = DirectX::XMFLOAT2(&scale[0]);
+		buttonVSData.screenWH = DirectX::XMINT2(screenWidth, screenHeight);
+		buttonVSData.translateXY = DirectX::XMFLOAT2(&rectPos[0]);
+		buttonVSData.colour = hoverColor;
 
 		Graphics::FillAndBindNextConstantBuffer(&buttonVSData, sizeof(ButtonShaderConstants), D3D11_VERTEX_SHADER, 0);
 	}
