@@ -14,15 +14,15 @@ void CircleShape::CreateVerticesIndices()
 	vertices[0] = {DirectX::XMFLOAT3(0, 0, 0), white};
 	for (int i = 0; i < 36; i++) 
 	{
-		vertices[i+1] = { DirectX::XMFLOAT3((float)cos(i * DirectX::XM_PIDIV2 / 9), (float)sin(i * DirectX::XM_PIDIV2 / 9), 0.0f), white };
+		vertices[i+1] = { DirectX::XMFLOAT3((float)cos(i * DirectX::XM_PIDIV2 / 9.0f), (float)sin(i * DirectX::XM_PIDIV2 / 9.0f), 0.0f), white };
 	}
 	vertices[37] = vertices[1];
 
-	for (int i = 0; i < 35; i++) 
+	for (int i = 0; i < 36; i++) 
 	{
 		indices[i*3] = 0;
-		indices[i * 3 + 1] = i + 1;
-		indices[i * 3 + 2] = i + 2;
+		indices[i * 3 + 1] = i + 2;
+		indices[i * 3 + 2] = i + 1;
 	}
 }
 

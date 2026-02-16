@@ -45,8 +45,8 @@ private:
 	void LoadPixelShader(const std::wstring& path);
 	void DefaultInputLayout(ID3DBlob* vertexShaderBlob);
 
-	void SetConstantsForFrame(RectangleShape e, int kind);
-
+	void SetConstantsForFrame(RectangleShape e, int kind = 0);
+	void SetConstantsForFrame(CircleShape e, int kind = 0);
 	// Note the usage of ComPtr below
 	//  - This is a smart pointer for objects that abide by the
 	//     Component Object Model, which DirectX objects do

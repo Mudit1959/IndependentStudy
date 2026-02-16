@@ -32,6 +32,7 @@ std::vector<CircleShape> circleList;
 float rectPos[2] = { 10.0f, 10.0f};
 float cameraPos[3] = { 0.0f, 0.0f, 0.0f };
 float scale[3] = { 0.5f, 0.5f, 1.0f };
+float circleScale[2] = {};
 unsigned int screenWidth, screenHeight;
 
 DirectX::XMFLOAT4 hoverColor(1.0f, 0.0f, 0.0f, 1.0f);
@@ -103,13 +104,18 @@ void Game::ImGuiBuildUI()
 	ImGui::Begin("Hello There!");
 	if (ImGui::TreeNode("Rectangle World Pos")) 
 	{
-		ImGui::DragFloat2("", &rectPos[0], 0.01f, 0.0f, 50.0f, "%.3f");
+		ImGui::DragFloat2("", &rectPos[0], 0.1f, 0.0f, 720.0f, "%.3f");
 		ImGui::TreePop();
 	}
 	if (ImGui::TreeNode("Rectangle Half Dimensions"))
 	{
 		ImGui::DragFloat("Half-Width", &scale[0], 0.1f, 0.5f, 500.0f, "%.3f");
 		ImGui::DragFloat("Half-Height", &scale[1], 0.1f, 0.5f, 500.0f, "%.3f");
+		ImGui::TreePop();
+	}
+	if (ImGui::TreeNode("Circle Scale"))
+	{
+		ImGui::DragFloat2("", &circleScale[0], 0.1f, 0.0f, 360.0f, "%.3f");
 		ImGui::TreePop();
 	}
 	if (ImGui::TreeNode("Camera Pos"))
@@ -271,6 +277,9 @@ void Game::Update(float deltaTime, float totalTime)
 	rectList[0].GetTransform()->Rotate(0.0f, 0.0f, deltaTime * DirectX::XM_PI / 18.0f);
 	rectList[0].GetTransform()->CalculateWorldMatrix();
 
+	circleList[0].GetTransform()->SetScale(circleScale[0], circleScale[1], 1.0f);
+	circleList[0].GetTransform()->CalculateWorldMatrix();
+
 	camera->GetTransform()->SetPosition(DirectX::XMFLOAT3(&cameraPos[0]));
 
 	camera->Update();
@@ -317,6 +326,12 @@ void Game::Draw(float deltaTime, float totalTime)
 		{
 			SetConstantsForFrame(rectList[i], 1);
 			rectList[i].Draw();
+		}
+
+		for (int i = 0; i < circleList.size(); i++)
+		{
+			SetConstantsForFrame(circleList[i], 1);
+			circleList[i].Draw();
 		}
 	}
 
@@ -366,7 +381,6 @@ void Game::SetConstantsForFrame(RectangleShape e, int kind)
 		ButtonShaderConstants buttonVSData = {};
 		buttonVSData.world = e.GetTransform()->GetWorldMatrix();
 		buttonVSData.worldInvT = e.GetTransform()->GetWorldInverseTMatrix();
-		buttonVSData.objectWH = DirectX::XMFLOAT2(&scale[0]);
 		buttonVSData.screenWH = DirectX::XMINT2(screenWidth, screenHeight);
 		buttonVSData.translateXY = DirectX::XMFLOAT2(&rectPos[0]);
 		buttonVSData.colour = hoverColor;
@@ -374,5 +388,38 @@ void Game::SetConstantsForFrame(RectangleShape e, int kind)
 		Graphics::FillAndBindNextConstantBuffer(&buttonVSData, sizeof(ButtonShaderConstants), D3D11_VERTEX_SHADER, 0);
 	}
 	
+}
+
+void Game::SetConstantsForFrame(CircleShape e, int kind)
+{
+	if (kind == 0)
+	{
+		VertexShaderConstants vsData = {};
+		vsData.world = e.GetTransform()->GetWorldMatrix();
+		vsData.worldInvT = e.GetTransform()->GetWorldInverseTMatrix();
+
+		//DirectX::FXMMATRIX cameraView = DirectX::XMMatrixLookToLH(DirectX::XMVectorSet(0.0f, 0.0f, -10.0f, 1.0f), DirectX::XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f), DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 1.0f));
+		//DirectX::XMStoreFloat4x4(&vsData.view, cameraView);
+		vsData.view = camera->GetViewMatrix();
+
+		//DirectX::FXMMATRIX cameraProj = DirectX::XMMatrixPerspectiveFovLH(DirectX::XM_PIDIV4, Window::AspectRatio(), 0.01f, 400.0f);
+		//DirectX::XMStoreFloat4x4(&vsData.proj, cameraProj);
+		vsData.proj = camera->GetProjMatrix();
+
+		Graphics::FillAndBindNextConstantBuffer(&vsData, sizeof(VertexShaderConstants), D3D11_VERTEX_SHADER, 0);
+	}
+
+	if (kind == 1)
+	{
+		ButtonShaderConstants buttonVSData = {};
+		buttonVSData.world = e.GetTransform()->GetWorldMatrix();
+		buttonVSData.worldInvT = e.GetTransform()->GetWorldInverseTMatrix();
+		buttonVSData.screenWH = DirectX::XMINT2(screenWidth, screenHeight);
+		buttonVSData.translateXY = DirectX::XMFLOAT2(360, 360);
+		buttonVSData.colour = hoverColor;
+
+		Graphics::FillAndBindNextConstantBuffer(&buttonVSData, sizeof(ButtonShaderConstants), D3D11_VERTEX_SHADER, 0);
+	}
+
 }
 

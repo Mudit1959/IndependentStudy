@@ -16,9 +16,9 @@ struct ButtonShaderConstants
 	DirectX::XMFLOAT4X4 world;
 	DirectX::XMFLOAT4X4 worldInvT;
 
-	DirectX::XMFLOAT2 objectWH;
-	DirectX::XMFLOAT2 translateXY;
+	
 	DirectX::XMFLOAT4 colour;
+	DirectX::XMFLOAT2 translateXY;
 	DirectX::XMINT2 screenWH;
 	
 };
