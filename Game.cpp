@@ -31,8 +31,8 @@ std::vector<CircleShape> circleList;
 
 float rectPos[2] = { 10.0f, 10.0f};
 float cameraPos[3] = { 0.0f, 0.0f, 0.0f };
-float scale[3] = { 0.5f, 0.5f, 1.0f };
-float circleScale[2] = {};
+float scale[3] = { 10.0f, 10.0f, 1.0f };
+float circleScale[2] = {10.0f, 10.0f};
 unsigned int screenWidth, screenHeight;
 
 DirectX::XMFLOAT4 hoverColor(1.0f, 0.0f, 0.0f, 1.0f);
@@ -293,8 +293,8 @@ void Game::Update(float deltaTime, float totalTime)
 
 void Game::CheckMousePosition()
 {
-	float mouseX = Input::GetMouseX();
-	float mouseY = Input::GetMouseY();
+	int mouseX = Input::GetMouseX();
+	int mouseY = Input::GetMouseY();
 
 	if (mouseX < rectPos[0] - scale[0] || mouseX > rectPos[0] + scale[0] || mouseY < rectPos[1] || mouseY - scale[0] > rectPos[1] + scale[1]) { DirectX::XMStoreFloat4(&hoverColor, DirectX::XMVectorSet(0.0f, 0.0f, 1.0f, 1.0f)); }
 	else { DirectX::XMStoreFloat4(&hoverColor, DirectX::XMVectorSet(1.0f, 0.0f, 0.0f, 1.0f)); }
@@ -311,8 +311,8 @@ void Game::Draw(float deltaTime, float totalTime)
 	// - At the beginning of Game::Draw() before drawing *anything*
 	{
 		// Clear the back buffer (erase what's on screen) and depth buffer
-		const float color[4] = { 0.4f, 0.6f, 0.75f, 0.0f };
-		Graphics::Context->ClearRenderTargetView(Graphics::BackBufferRTV.Get(),	color);
+		const float backBufferClear[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+		Graphics::Context->ClearRenderTargetView(Graphics::BackBufferRTV.Get(),	backBufferClear);
 		Graphics::Context->ClearDepthStencilView(Graphics::DepthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 	}
 
@@ -416,7 +416,7 @@ void Game::SetConstantsForFrame(CircleShape e, int kind)
 		buttonVSData.worldInvT = e.GetTransform()->GetWorldInverseTMatrix();
 		buttonVSData.screenWH = DirectX::XMINT2(screenWidth, screenHeight);
 		buttonVSData.translateXY = DirectX::XMFLOAT2(360, 360);
-		buttonVSData.colour = hoverColor;
+		buttonVSData.colour = White;
 
 		Graphics::FillAndBindNextConstantBuffer(&buttonVSData, sizeof(ButtonShaderConstants), D3D11_VERTEX_SHADER, 0);
 	}

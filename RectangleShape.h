@@ -17,10 +17,10 @@ public:
 private:
 
 	Vertex vertices[4] = {
-		{DirectX::XMFLOAT3(+1.0f, +1.0f, +0.0f), DirectX::XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f) },
-		{DirectX::XMFLOAT3(+1.0f, -1.0f, +0.0f), DirectX::XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f)},
-		{DirectX::XMFLOAT3(-1.0f, -1.0f, +0.0f), DirectX::XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f)},
-		{DirectX::XMFLOAT3(-1.0f, +1.0f, +0.0f), DirectX::XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f)}
+		{DirectX::XMFLOAT3(+1.0f, +1.0f, +0.0f), Red },
+		{DirectX::XMFLOAT3(+1.0f, -1.0f, +0.0f), Blue},
+		{DirectX::XMFLOAT3(-1.0f, -1.0f, +0.0f), Green},
+		{DirectX::XMFLOAT3(-1.0f, +1.0f, +0.0f), Green}
 	};
 
 	unsigned int indices[6] = { 0, 1, 2, 0, 2, 3 };
