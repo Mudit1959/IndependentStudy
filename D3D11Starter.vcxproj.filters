@@ -75,7 +75,7 @@
     <ClCompile Include="RectangleShape.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="CircleShape.cpp">
+    <ClCompile Include="RoundedRectangleEntity.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -140,10 +140,10 @@
     <ClInclude Include="Camera.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="RectangleShape.h">
+    <ClInclude Include="RectangleEntity.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="CircleShape.h">
+    <ClInclude Include="RoundedRectangleEntity.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -154,7 +154,16 @@
     <FxCompile Include="VertexShader.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="ButtonVS.hlsl">
+    <FxCompile Include="RectVS.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="CirclePS.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="QuarterCircle.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="RoundedRectanglePS.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>
@@ -162,5 +171,8 @@
     <None Include="ShaderInclude.hlsli">
       <Filter>Shaders</Filter>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="Notes.txt" />
   </ItemGroup>
 </Project>

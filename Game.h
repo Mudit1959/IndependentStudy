@@ -8,8 +8,7 @@
 #include "Mesh.h"
 #include "Material.h"
 #include "Entity.h"
-#include "RectangleShape.h"
-#include "CircleShape.h"
+#include "RectangleEntity.h"
 #include "Camera.h"
 
 class Game
@@ -39,14 +38,12 @@ private:
 	// Initialization helper methods - feel free to customize, combine, remove, etc.
 	void LoadShadersCreateMaterials();
 	void CreateGeometry();
-	void CreateEntities();
 	void CreateCamera();
 	void LoadVertexShader(const std::wstring& path);
 	void LoadPixelShader(const std::wstring& path);
 	void DefaultInputLayout(ID3DBlob* vertexShaderBlob);
 
-	void SetConstantsForFrame(RectangleShape e, int kind = 0);
-	void SetConstantsForFrame(CircleShape e, int kind = 0);
+	void SetConstantsForFrame(RectangleEntity e);
 	// Note the usage of ComPtr below
 	//  - This is a smart pointer for objects that abide by the
 	//     Component Object Model, which DirectX objects do

@@ -27,5 +27,7 @@ struct VertexToPixel
 	//  |    |                |
 	//  v    v                v
     float4 screenPosition : SV_POSITION; // XYZW position (System Value Position)
+    float2 center : OBJECT_CENTER;
+    float2 screenRatio : SCREEN_RATIO;
     float4 color : COLOR; // RGBA color
 };

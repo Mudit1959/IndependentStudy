@@ -37,10 +37,14 @@ VertexToPixel main(VertexShaderInput input)
     float rX = 2.0 / screenWH.x;
     float rY = 2.0 / screenWH.y;
 	
-    input.localPosition = mul(world, float4(input.localPosition, 1.0f));
+    input.localPosition = mul(world, float4(input.localPosition, 1.0f)).xyz;
 	
     input.localPosition.x *= rX;
     input.localPosition.y *= rY;
+	
+    output.center = translateXY;
+	
+    output.screenRatio = float2(rX, rY);
 	
     input.localPosition.x += -1 + (rX * translateXY.x);
     input.localPosition.y += 1 - (rY * translateXY.y);

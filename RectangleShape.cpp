@@ -1,14 +1,17 @@
-#include "RectangleShape.h"
+#include "RectangleEntity.h"
 
 
-RectangleShape::RectangleShape(std::shared_ptr<Material> inMaterial)
+RectangleEntity::RectangleEntity(std::shared_ptr<Material> inMaterial, int inKind = 0)
 {
 	CreateVertexBuffer();
 	CreateIndexBuffer();
 	material = inMaterial;
+	kind = inKind;
 }
 
-void RectangleShape::CreateVertexBuffer()
+int RectangleEntity::GetKind() { return kind; }
+
+void RectangleEntity::CreateVertexBuffer()
 {
 	// Create a VERTEX BUFFER
 	// - This holds the vertex data of triangles for a single object
@@ -37,7 +40,7 @@ void RectangleShape::CreateVertexBuffer()
 	Graphics::Device->CreateBuffer(&vbd, &initialVertexData, vertexBuffer.GetAddressOf());
 }
 
-void RectangleShape::CreateIndexBuffer()
+void RectangleEntity::CreateIndexBuffer()
 {
 	// Creates an INDEX Buffer
 
@@ -55,7 +58,7 @@ void RectangleShape::CreateIndexBuffer()
 	Graphics::Device->CreateBuffer(&ibDesc, &initialIndexData, indexBuffer.GetAddressOf()); // Create the buffer
 }
 
-void RectangleShape::Draw()
+void RectangleEntity::Draw()
 {
 	UINT stride = sizeof(Vertex);
 	UINT offset = 0;
@@ -70,4 +73,4 @@ void RectangleShape::Draw()
 	Graphics::Context->DrawIndexed(indexCount, 0, 0);
 }
 
-Transform* RectangleShape::GetTransform() { return &transform; }
+Transform* RectangleEntity::GetTransform() { return &transform; }

@@ -23,16 +23,15 @@
 // For the DirectX Math library
 using namespace DirectX;
 
-std::vector<Entity> entityList;
-
-std::vector<RectangleShape> rectList;
-std::vector<CircleShape> circleList;
+std::vector<RectangleEntity> entityList;
+float checkPos = 0;
 
 
-float rectPos[2] = { 10.0f, 10.0f};
+float rectPos[2] = { 40.0f, 40.0f};
 float cameraPos[3] = { 0.0f, 0.0f, 0.0f };
-float scale[3] = { 10.0f, 10.0f, 1.0f };
+float scale[3] = { 20.0f, 20.0f, 1.0f };
 float circleScale[2] = {10.0f, 10.0f};
+float rounding = 0.0f;
 unsigned int screenWidth, screenHeight;
 
 DirectX::XMFLOAT4 hoverColor(1.0f, 0.0f, 0.0f, 1.0f);
@@ -118,6 +117,16 @@ void Game::ImGuiBuildUI()
 		ImGui::DragFloat2("", &circleScale[0], 0.1f, 0.0f, 360.0f, "%.3f");
 		ImGui::TreePop();
 	}
+	if (ImGui::TreeNode("Rounding"))
+	{
+		ImGui::PushID(9);
+		float cmp = scale[0];
+		if (scale[1] < cmp) { cmp = scale[1]; }
+		ImGui::DragFloat("", &rounding, 0.1f, 0.0f, cmp, "%.3f");
+		ImGui::PopID();
+		ImGui::TreePop();
+	}
+
 	if (ImGui::TreeNode("Camera Pos"))
 	{
 		ImGui::DragFloat3("", &cameraPos[0], 0.01f, -50.0f, 50.0f, "%.3f");
@@ -216,20 +225,21 @@ void Game::LoadShadersCreateMaterials()
 {
 	
 	Game::LoadVertexShader(L"VertexShader.cso");
+	Game::LoadVertexShader(L"RectVS.cso");
+
 	Game::LoadPixelShader(L"PixelShader.cso");
+	Game::LoadPixelShader(L"CirclePS.cso");
+	Game::LoadPixelShader(L"RoundedRectanglePS.cso");
 	
 
 	// At this stage -> 
-	// Vertex Shaders - 1 
-	// Pixel Shaders - 1
-	// Input Layouts - 1
+	// Vertex Shaders - 2 - Default, Scaled Rectangle Vertices
+	// Pixel Shaders - 2 - Default, Circle, Rounded Rect(Not working)
+	// Input Layouts - 1 - Default
 
 	materials.push_back(std::make_shared<Material>(vertexShaders[0], pixelShaders[0], inputLayouts[0]));
-
-	Game::LoadVertexShader(L"ButtonVS.cso");
-
-
 	materials.push_back(std::make_shared<Material>(vertexShaders[1], pixelShaders[0], inputLayouts[0]));
+	materials.push_back(std::make_shared<Material>(vertexShaders[1], pixelShaders[1], inputLayouts[0]));
 	
 }
 
@@ -238,13 +248,7 @@ void Game::LoadShadersCreateMaterials()
 // --------------------------------------------------------
 void Game::CreateGeometry()
 {
-	CreateEntities();
-}
-
-void Game::CreateEntities()
-{
-	rectList.push_back(RectangleShape(materials[1]));
-	circleList.push_back(CircleShape(materials[1]));
+	entityList.push_back(RectangleEntity(materials[2], 2));
 }
 
 void Game::CreateCamera()
@@ -273,12 +277,9 @@ void Game::Update(float deltaTime, float totalTime)
 {
 	Game::ImGuiUpdate(deltaTime);
 	
-	rectList[0].GetTransform()->SetScale(DirectX::XMFLOAT3(&scale[0]));
-	rectList[0].GetTransform()->Rotate(0.0f, 0.0f, deltaTime * DirectX::XM_PI / 18.0f);
-	rectList[0].GetTransform()->CalculateWorldMatrix();
-
-	circleList[0].GetTransform()->SetScale(circleScale[0], circleScale[1], 1.0f);
-	circleList[0].GetTransform()->CalculateWorldMatrix();
+	entityList[0].GetTransform()->SetScale(DirectX::XMFLOAT3(&scale[0]));
+	//entityList[0].GetTransform()->Rotate(0.0f, 0.0f, deltaTime * DirectX::XM_PI / 18.0f);
+	entityList[0].GetTransform()->CalculateWorldMatrix();
 
 	camera->GetTransform()->SetPosition(DirectX::XMFLOAT3(&cameraPos[0]));
 
@@ -296,7 +297,8 @@ void Game::CheckMousePosition()
 	int mouseX = Input::GetMouseX();
 	int mouseY = Input::GetMouseY();
 
-	if (mouseX < rectPos[0] - scale[0] || mouseX > rectPos[0] + scale[0] || mouseY < rectPos[1] || mouseY - scale[0] > rectPos[1] + scale[1]) { DirectX::XMStoreFloat4(&hoverColor, DirectX::XMVectorSet(0.0f, 0.0f, 1.0f, 1.0f)); }
+	if (mouseX < rectPos[0] - scale[0] || mouseX > rectPos[0] + scale[0] || mouseY < rectPos[1] - scale[1] || mouseY > rectPos[1] + scale[1]) 
+	{ DirectX::XMStoreFloat4(&hoverColor, DirectX::XMVectorSet(0.0f, 0.0f, 1.0f, 1.0f)); }
 	else { DirectX::XMStoreFloat4(&hoverColor, DirectX::XMVectorSet(1.0f, 0.0f, 0.0f, 1.0f)); }
 }
 
@@ -322,17 +324,8 @@ void Game::Draw(float deltaTime, float totalTime)
 	// - These steps are generally repeated for EACH object you draw
 	// - Other Direct3D calls will also be necessary to do more complex things
 	{
-		for (int i = 0; i < rectList.size(); i++) 
-		{
-			SetConstantsForFrame(rectList[i], 1);
-			rectList[i].Draw();
-		}
-
-		for (int i = 0; i < circleList.size(); i++)
-		{
-			SetConstantsForFrame(circleList[i], 1);
-			circleList[i].Draw();
-		}
+		SetConstantsForFrame(entityList[0]);
+		entityList[0].Draw();
 	}
 
 	// Frame END
@@ -357,9 +350,10 @@ void Game::Draw(float deltaTime, float totalTime)
 	}
 }
 
-void Game::SetConstantsForFrame(RectangleShape e, int kind) 
+void Game::SetConstantsForFrame(RectangleEntity e) 
 {
-	if(kind == 0)
+	int k = e.GetKind();
+	if( k == 0)
 	{
 		VertexShaderConstants vsData = {};
 		vsData.world = e.GetTransform()->GetWorldMatrix();
@@ -376,50 +370,26 @@ void Game::SetConstantsForFrame(RectangleShape e, int kind)
 		Graphics::FillAndBindNextConstantBuffer(&vsData, sizeof(VertexShaderConstants), D3D11_VERTEX_SHADER, 0);
 	}
 
-	if (kind == 1) 
+	if (k == 1 || k==2) 
 	{
-		ButtonShaderConstants buttonVSData = {};
-		buttonVSData.world = e.GetTransform()->GetWorldMatrix();
-		buttonVSData.worldInvT = e.GetTransform()->GetWorldInverseTMatrix();
-		buttonVSData.screenWH = DirectX::XMINT2(screenWidth, screenHeight);
-		buttonVSData.translateXY = DirectX::XMFLOAT2(&rectPos[0]);
-		buttonVSData.colour = hoverColor;
+		RectVSConstants rectVSData = {};
+		rectVSData.world = e.GetTransform()->GetWorldMatrix();
+		rectVSData.worldInvT = e.GetTransform()->GetWorldInverseTMatrix();
+		rectVSData.screenWH = DirectX::XMINT2(screenWidth, screenHeight);
+		rectVSData.translateXY = DirectX::XMFLOAT2(&rectPos[0]);
+		rectVSData.colour = White;
 
-		Graphics::FillAndBindNextConstantBuffer(&buttonVSData, sizeof(ButtonShaderConstants), D3D11_VERTEX_SHADER, 0);
+		Graphics::FillAndBindNextConstantBuffer(&rectVSData, sizeof(RectVSConstants), D3D11_VERTEX_SHADER, 0);
 	}
+
+	if (k == 2) 
+	{
+		CirclePSConstants circlePSData = {};
+		DirectX::XMFLOAT3 scale = e.GetTransform()->GetScale();
+		circlePSData.radius = rounding; // Setting it to an even circle for now!
+
+		Graphics::FillAndBindNextConstantBuffer(&circlePSData, sizeof(CirclePSConstants), D3D11_PIXEL_SHADER, 0);
+	}
+
 	
 }
-
-void Game::SetConstantsForFrame(CircleShape e, int kind)
-{
-	if (kind == 0)
-	{
-		VertexShaderConstants vsData = {};
-		vsData.world = e.GetTransform()->GetWorldMatrix();
-		vsData.worldInvT = e.GetTransform()->GetWorldInverseTMatrix();
-
-		//DirectX::FXMMATRIX cameraView = DirectX::XMMatrixLookToLH(DirectX::XMVectorSet(0.0f, 0.0f, -10.0f, 1.0f), DirectX::XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f), DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 1.0f));
-		//DirectX::XMStoreFloat4x4(&vsData.view, cameraView);
-		vsData.view = camera->GetViewMatrix();
-
-		//DirectX::FXMMATRIX cameraProj = DirectX::XMMatrixPerspectiveFovLH(DirectX::XM_PIDIV4, Window::AspectRatio(), 0.01f, 400.0f);
-		//DirectX::XMStoreFloat4x4(&vsData.proj, cameraProj);
-		vsData.proj = camera->GetProjMatrix();
-
-		Graphics::FillAndBindNextConstantBuffer(&vsData, sizeof(VertexShaderConstants), D3D11_VERTEX_SHADER, 0);
-	}
-
-	if (kind == 1)
-	{
-		ButtonShaderConstants buttonVSData = {};
-		buttonVSData.world = e.GetTransform()->GetWorldMatrix();
-		buttonVSData.worldInvT = e.GetTransform()->GetWorldInverseTMatrix();
-		buttonVSData.screenWH = DirectX::XMINT2(screenWidth, screenHeight);
-		buttonVSData.translateXY = DirectX::XMFLOAT2(360, 360);
-		buttonVSData.colour = White;
-
-		Graphics::FillAndBindNextConstantBuffer(&buttonVSData, sizeof(ButtonShaderConstants), D3D11_VERTEX_SHADER, 0);
-	}
-
-}
-

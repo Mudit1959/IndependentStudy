@@ -7,10 +7,11 @@
 #include <memory>
 
 
-class RectangleShape
+class RectangleEntity
 {
 public:
-	RectangleShape(std::shared_ptr<Material> material);
+	RectangleEntity(std::shared_ptr<Material> material, int kind);
+	int GetKind();
 	void Draw();
 	Transform* GetTransform();
 
@@ -24,6 +25,7 @@ private:
 	};
 
 	unsigned int indices[6] = { 0, 1, 2, 0, 2, 3 };
+	int kind = 0;
 	std::shared_ptr<Material> material;
 
 

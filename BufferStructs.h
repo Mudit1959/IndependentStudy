@@ -11,7 +11,7 @@ struct VertexShaderConstants // Vertex Constant Buffer Data
 	DirectX::XMFLOAT4X4 proj;
 };
 
-struct ButtonShaderConstants 
+struct RectVSConstants 
 {
 	DirectX::XMFLOAT4X4 world;
 	DirectX::XMFLOAT4X4 worldInvT;
@@ -21,5 +21,16 @@ struct ButtonShaderConstants
 	DirectX::XMFLOAT2 translateXY;
 	DirectX::XMINT2 screenWH;
 	
+};
+
+struct CirclePSConstants 
+{
+	float radius;
+};
+
+struct RoundedRectConstants 
+{
+	float roundingRadius;
+	DirectX::XMFLOAT2 widthHeight;
 };
 

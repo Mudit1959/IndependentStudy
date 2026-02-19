@@ -1,0 +1,6 @@
+ //Play around with for circles and rounded rectangles
+ //float2 dist = input.screenPosition.xy - input.center;
+ //float comp = smoothstep(radiusXY.x - (0.1 * radiusXY.x), radiusXY.x + (0.1 * radiusXY.x), dot(dist/3, dist/3));
+ //comp = 1 - comp;
+    
+ //return float4(comp, 0.0f, 0.0f, 1.0f);
