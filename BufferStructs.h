@@ -26,11 +26,6 @@ struct RectVSConstants
 struct CirclePSConstants 
 {
 	float radius;
-};
-
-struct RoundedRectConstants 
-{
-	float roundingRadius;
-	DirectX::XMFLOAT2 widthHeight;
+	DirectX::XMFLOAT3 padding;
 };
 

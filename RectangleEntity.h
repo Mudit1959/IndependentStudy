@@ -4,6 +4,9 @@
 #include "Graphics.h"
 #include "Material.h"
 #include "Transform.h"
+#include "BufferStructs.h"
+#include "Graphics.h"
+#include "Kinds.h"
 #include <memory>
 
 
@@ -12,8 +15,17 @@ class RectangleEntity
 public:
 	RectangleEntity(std::shared_ptr<Material> material, int kind);
 	int GetKind();
-	void Draw();
+	void DrawRect(unsigned int screenWidth, unsigned int screenHeight);
+	void DrawCircle(unsigned int screenWidth, unsigned int screenHeight, float radius);
 	Transform* GetTransform();
+
+	DirectX::XMFLOAT4 GetColor();
+	void SetColor(float r, float g, float b, float a);
+	void SetColor(DirectX::XMFLOAT4 c);
+
+	DirectX::XMFLOAT2 GetTranslateXY();
+	void SetTranslateXY(float x, float y);
+	void SetTranslateXY(DirectX::XMFLOAT2 xy);
 
 private:
 
@@ -28,6 +40,9 @@ private:
 	int kind = 0;
 	std::shared_ptr<Material> material;
 
+	DirectX::XMFLOAT4 color; // The color of the object passed into vertex shader
+	DirectX::XMFLOAT2 translateXY;
+	
 
 	Transform transform;
 

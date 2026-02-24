@@ -7,6 +7,8 @@ RectangleEntity::RectangleEntity(std::shared_ptr<Material> inMaterial, int inKin
 	CreateIndexBuffer();
 	material = inMaterial;
 	kind = inKind;
+	color = DirectX::XMFLOAT4(0, 0, 0, 0);
+	translateXY = DirectX::XMFLOAT2(0, 0);
 }
 
 int RectangleEntity::GetKind() { return kind; }
@@ -58,10 +60,51 @@ void RectangleEntity::CreateIndexBuffer()
 	Graphics::Device->CreateBuffer(&ibDesc, &initialIndexData, indexBuffer.GetAddressOf()); // Create the buffer
 }
 
-void RectangleEntity::Draw()
+void RectangleEntity::DrawRect(unsigned int screenWidth, unsigned int screenHeight)
 {
 	UINT stride = sizeof(Vertex);
 	UINT offset = 0;
+
+	// MUST SET CONSTANTS FOR VERTEX SHADER
+	RectVSConstants rectVSData = {};
+	rectVSData.world = GetTransform()->GetWorldMatrix();
+	rectVSData.worldInvT = GetTransform()->GetWorldInverseTMatrix();
+	rectVSData.screenWH = DirectX::XMINT2(screenWidth, screenHeight);
+	rectVSData.translateXY = GetTranslateXY();
+	rectVSData.colour = GetColor();
+
+	Graphics::FillAndBindNextConstantBuffer(&rectVSData, sizeof(RectVSConstants), D3D11_VERTEX_SHADER, 0);
+
+	Graphics::Context->IASetVertexBuffers(0, 1, vertexBuffer.GetAddressOf(), &stride, &offset);
+	Graphics::Context->IASetIndexBuffer(indexBuffer.Get(), DXGI_FORMAT_R32_UINT, offset);
+
+	Graphics::Context->IASetInputLayout(material->GetInputLayout().Get());
+	Graphics::Context->VSSetShader(material->GetVertexShader().Get(), 0, 0);
+	Graphics::Context->PSSetShader(material->GetPixelShader().Get(), 0, 0);
+
+	Graphics::Context->DrawIndexed(indexCount, 0, 0);
+}
+
+void RectangleEntity::DrawCircle(unsigned int screenWidth, unsigned int screenHeight, float radius)
+{
+	UINT stride = sizeof(Vertex);
+	UINT offset = 0;
+
+	// MUST SET CONSTANTS FOR VERTEX SHADER
+	RectVSConstants rectVSData = {};
+	rectVSData.world = GetTransform()->GetWorldMatrix();
+	rectVSData.worldInvT = GetTransform()->GetWorldInverseTMatrix();
+	rectVSData.screenWH = DirectX::XMINT2(screenWidth, screenHeight);
+	rectVSData.translateXY = GetTranslateXY();
+	rectVSData.colour = GetColor();
+
+	Graphics::FillAndBindNextConstantBuffer(&rectVSData, sizeof(RectVSConstants), D3D11_VERTEX_SHADER, 0);
+
+	// CIRCLE PS CONSTANTS
+	CirclePSConstants circlePSData = {};
+	circlePSData.radius = radius; // Setting it to an even circle for now!
+
+	Graphics::FillAndBindNextConstantBuffer(&circlePSData, sizeof(CirclePSConstants), D3D11_PIXEL_SHADER, 0);
 
 	Graphics::Context->IASetVertexBuffers(0, 1, vertexBuffer.GetAddressOf(), &stride, &offset);
 	Graphics::Context->IASetIndexBuffer(indexBuffer.Get(), DXGI_FORMAT_R32_UINT, offset);
@@ -74,3 +117,11 @@ void RectangleEntity::Draw()
 }
 
 Transform* RectangleEntity::GetTransform() { return &transform; }
+
+DirectX::XMFLOAT4 RectangleEntity::GetColor() { return color; }
+void RectangleEntity::SetColor(float r, float g, float b, float a) { DirectX::XMStoreFloat4(&color, DirectX::XMVectorSet(r, g, b, a)); }
+void RectangleEntity::SetColor(DirectX::XMFLOAT4 c) { color = c; }
+
+DirectX::XMFLOAT2 RectangleEntity::GetTranslateXY() { return translateXY; }
+void RectangleEntity::SetTranslateXY(float x, float y) { DirectX::XMStoreFloat2(&translateXY, DirectX::XMVectorSet(x,y,0,0)); }
+void RectangleEntity::SetTranslateXY(DirectX::XMFLOAT2 xy) { translateXY = xy; }

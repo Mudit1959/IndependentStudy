@@ -72,7 +72,7 @@
     <ClCompile Include="Camera.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="RectangleShape.cpp">
+    <ClCompile Include="RectangleEntity.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="RoundedRectangleEntity.cpp">
@@ -146,9 +146,12 @@
     <ClInclude Include="RoundedRectangleEntity.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Kinds.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="PixelShader.hlsl">
+    <FxCompile Include="BasicPixelShader.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="VertexShader.hlsl">
@@ -160,10 +163,7 @@
     <FxCompile Include="CirclePS.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="QuarterCircle.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="RoundedRectanglePS.hlsl">
+    <FxCompile Include="QuarterCirclePS.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>
@@ -174,5 +174,6 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="Notes.txt" />
+    <Text Include="Blending State.txt" />
   </ItemGroup>
 </Project>

@@ -16,3 +16,5 @@ void Entity::Draw()
 }
 
 Transform* Entity::GetTransform() { return &transform; }
+
+

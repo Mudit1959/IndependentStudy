@@ -16,10 +16,12 @@ public:
 	Entity(std::shared_ptr<Mesh> inMesh, std::shared_ptr<Material> inMaterial);
 	Transform* GetTransform();
 	void Draw();
+	
+	
 
 private:
 	std::shared_ptr<Mesh> mesh;
 	std::shared_ptr<Material> material;
 	Transform transform;
-
+	
 };

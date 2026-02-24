@@ -5,6 +5,8 @@
 #include "PathHelpers.h"
 #include "Window.h"
 #include "BufferStructs.h"
+#include "RoundedRectangleEntity.h"
+#include "Kinds.h"
 
 // ImGui header files
 #include "ImGui/imgui.h"
@@ -24,17 +26,16 @@
 using namespace DirectX;
 
 std::vector<RectangleEntity> entityList;
+std::shared_ptr<RoundedRectangleEntity> RRect;
 float checkPos = 0;
+
 
 
 float rectPos[2] = { 40.0f, 40.0f};
 float cameraPos[3] = { 0.0f, 0.0f, 0.0f };
 float scale[3] = { 20.0f, 20.0f, 1.0f };
-float circleScale[2] = {10.0f, 10.0f};
-float rounding = 0.0f;
+float circleRadius = 0.0f;
 unsigned int screenWidth, screenHeight;
-
-DirectX::XMFLOAT4 hoverColor(1.0f, 0.0f, 0.0f, 1.0f);
 
 // --------------------------------------------------------
 // The constructor is called after the window and graphics API
@@ -112,17 +113,12 @@ void Game::ImGuiBuildUI()
 		ImGui::DragFloat("Half-Height", &scale[1], 0.1f, 0.5f, 500.0f, "%.3f");
 		ImGui::TreePop();
 	}
-	if (ImGui::TreeNode("Circle Scale"))
-	{
-		ImGui::DragFloat2("", &circleScale[0], 0.1f, 0.0f, 360.0f, "%.3f");
-		ImGui::TreePop();
-	}
-	if (ImGui::TreeNode("Rounding"))
+	if (ImGui::TreeNode("Radius"))
 	{
 		ImGui::PushID(9);
 		float cmp = scale[0];
 		if (scale[1] < cmp) { cmp = scale[1]; }
-		ImGui::DragFloat("", &rounding, 0.1f, 0.0f, cmp, "%.3f");
+		ImGui::DragFloat("", &circleRadius, 0.1f, 0.0f, cmp, "%.3f");
 		ImGui::PopID();
 		ImGui::TreePop();
 	}
@@ -227,19 +223,19 @@ void Game::LoadShadersCreateMaterials()
 	Game::LoadVertexShader(L"VertexShader.cso");
 	Game::LoadVertexShader(L"RectVS.cso");
 
-	Game::LoadPixelShader(L"PixelShader.cso");
+	Game::LoadPixelShader(L"BasicPixelShader.cso");
 	Game::LoadPixelShader(L"CirclePS.cso");
-	Game::LoadPixelShader(L"RoundedRectanglePS.cso");
+
 	
 
 	// At this stage -> 
 	// Vertex Shaders - 2 - Default, Scaled Rectangle Vertices
-	// Pixel Shaders - 2 - Default, Circle, Rounded Rect(Not working)
+	// Pixel Shaders - 2 - Default, Circle
 	// Input Layouts - 1 - Default
 
-	materials.push_back(std::make_shared<Material>(vertexShaders[0], pixelShaders[0], inputLayouts[0]));
-	materials.push_back(std::make_shared<Material>(vertexShaders[1], pixelShaders[0], inputLayouts[0]));
-	materials.push_back(std::make_shared<Material>(vertexShaders[1], pixelShaders[1], inputLayouts[0]));
+	materials.push_back(std::make_shared<Material>(vertexShaders[0], pixelShaders[0], inputLayouts[0])); // Basic
+	materials.push_back(std::make_shared<Material>(vertexShaders[1], pixelShaders[0], inputLayouts[0])); // Rectangles
+	materials.push_back(std::make_shared<Material>(vertexShaders[1], pixelShaders[1], inputLayouts[0])); // Circles
 	
 }
 
@@ -248,7 +244,9 @@ void Game::LoadShadersCreateMaterials()
 // --------------------------------------------------------
 void Game::CreateGeometry()
 {
-	entityList.push_back(RectangleEntity(materials[2], 2));
+	entityList.push_back(RectangleEntity(materials[CIRCLE], CIRCLE)); // Create a circle
+	RRect = std::make_shared<RoundedRectangleEntity>(materials[1], materials[2], 
+		DirectX::XMFLOAT2(50,50), 10.0f);
 }
 
 void Game::CreateCamera()
@@ -278,6 +276,7 @@ void Game::Update(float deltaTime, float totalTime)
 	Game::ImGuiUpdate(deltaTime);
 	
 	entityList[0].GetTransform()->SetScale(DirectX::XMFLOAT3(&scale[0]));
+	entityList[0].SetTranslateXY(rectPos[0], rectPos[1]);
 	//entityList[0].GetTransform()->Rotate(0.0f, 0.0f, deltaTime * DirectX::XM_PI / 18.0f);
 	entityList[0].GetTransform()->CalculateWorldMatrix();
 
@@ -298,8 +297,10 @@ void Game::CheckMousePosition()
 	int mouseY = Input::GetMouseY();
 
 	if (mouseX < rectPos[0] - scale[0] || mouseX > rectPos[0] + scale[0] || mouseY < rectPos[1] - scale[1] || mouseY > rectPos[1] + scale[1]) 
-	{ DirectX::XMStoreFloat4(&hoverColor, DirectX::XMVectorSet(0.0f, 0.0f, 1.0f, 1.0f)); }
-	else { DirectX::XMStoreFloat4(&hoverColor, DirectX::XMVectorSet(1.0f, 0.0f, 0.0f, 1.0f)); }
+	{
+		entityList[0].SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+	}
+	else { entityList[0].SetColor(1.0f, 0.0f, 0.0f, 1.0f); }
 }
 
 
@@ -317,15 +318,14 @@ void Game::Draw(float deltaTime, float totalTime)
 		Graphics::Context->ClearRenderTargetView(Graphics::BackBufferRTV.Get(),	backBufferClear);
 		Graphics::Context->ClearDepthStencilView(Graphics::DepthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 	}
-
 	
 
 	// DRAW geometry
 	// - These steps are generally repeated for EACH object you draw
 	// - Other Direct3D calls will also be necessary to do more complex things
 	{
-		SetConstantsForFrame(entityList[0]);
-		entityList[0].Draw();
+		entityList[0].DrawCircle(screenWidth, screenHeight, circleRadius);
+		RRect->Draw(screenWidth, screenHeight);
 	}
 
 	// Frame END
@@ -353,7 +353,7 @@ void Game::Draw(float deltaTime, float totalTime)
 void Game::SetConstantsForFrame(RectangleEntity e) 
 {
 	int k = e.GetKind();
-	if( k == 0)
+	if( k == TD_ENTITY)
 	{
 		VertexShaderConstants vsData = {};
 		vsData.world = e.GetTransform()->GetWorldMatrix();
@@ -369,27 +369,4 @@ void Game::SetConstantsForFrame(RectangleEntity e)
 
 		Graphics::FillAndBindNextConstantBuffer(&vsData, sizeof(VertexShaderConstants), D3D11_VERTEX_SHADER, 0);
 	}
-
-	if (k == 1 || k==2) 
-	{
-		RectVSConstants rectVSData = {};
-		rectVSData.world = e.GetTransform()->GetWorldMatrix();
-		rectVSData.worldInvT = e.GetTransform()->GetWorldInverseTMatrix();
-		rectVSData.screenWH = DirectX::XMINT2(screenWidth, screenHeight);
-		rectVSData.translateXY = DirectX::XMFLOAT2(&rectPos[0]);
-		rectVSData.colour = White;
-
-		Graphics::FillAndBindNextConstantBuffer(&rectVSData, sizeof(RectVSConstants), D3D11_VERTEX_SHADER, 0);
-	}
-
-	if (k == 2) 
-	{
-		CirclePSConstants circlePSData = {};
-		DirectX::XMFLOAT3 scale = e.GetTransform()->GetScale();
-		circlePSData.radius = rounding; // Setting it to an even circle for now!
-
-		Graphics::FillAndBindNextConstantBuffer(&circlePSData, sizeof(CirclePSConstants), D3D11_PIXEL_SHADER, 0);
-	}
-
-	
 }
