@@ -95,6 +95,7 @@ void RoundedRectangleEntity::CalculateSetDimensions()
 
 void RoundedRectangleEntity::Draw(unsigned int screenWidth, unsigned int screenHeight) 
 {
+	
 	if (edited != 0) { CalculateSetDimensions(); }
 	
 	// If the radius is 0, we only want to draw the center rectangle
@@ -104,9 +105,10 @@ void RoundedRectangleEntity::Draw(unsigned int screenWidth, unsigned int screenH
 	}
 	// If the radius is not 0, we want to draw the rectangles first, then the rounded corners 
 	// - This is for future designs, like having sharp edges on the inside and colored rounded corners
-	// The pixel shader adds colors?
 	else
 	{
+		
+
 		parts[0].DrawRect(screenWidth, screenHeight);
 		parts[1].DrawRect(screenWidth, screenHeight);
 		parts[2].DrawRect(screenWidth, screenHeight);
@@ -116,7 +118,10 @@ void RoundedRectangleEntity::Draw(unsigned int screenWidth, unsigned int screenH
 		parts[5].DrawCircle(screenWidth, screenHeight, radius);
 		parts[6].DrawCircle(screenWidth, screenHeight, radius);
 		
+		
 	}
+
+	
 }
 
 void RoundedRectangleEntity::SetRadius(float r) { radius = r; edited++; }

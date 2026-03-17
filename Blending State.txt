@@ -1,0 +1,43 @@
+The default blend state
+
+D3D11_BLEND_DESC blendStateDesc = {};
+blendStateDesc.AlphaToCoverageEnable = FALSE;
+blendStateDesc.IndependentBlendEnable = FALSE;
+blendStateDesc.RenderTarget[0].BlendEnable = FALSE;
+blendStateDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+blendStateDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+blendStateDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
+blendStateDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+blendStateDesc.RenderTarget[0].DestBlend = D3D11_BLEND_ZERO;
+blendStateDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+blendStateDesc.RenderTarget[0].RenderTargetWriteMask = D3D10_COLOR_WRITE_ENABLE_ALL;
+
+https://www.braynzarsoft.net/viewtutorial/q16390-12-blending
+
+(FC) - Final Color
+(SP) - Source Pixel
+(DP) - Destination Pixel
+(SBF) - Source Blend Factor
+(DBF) - Destination Blend Factor
+(FA) - Final Alpha
+(SA) - Source Alpha
+(DA) - Destination Alpha
+(+) - Binaray Operator described below
+(X) - Cross Multiply Matrices
+
+Direct3d uses two different blending equations. 
+One for color, and one for alpha. 
+There are two different equations for color and alpha because we are able to process them both differently if we want, using different operators and different blend factors. 
+The two equationes are as follows:
+
+(FC) = (SP) (X) (SBF) (+) (DP) (X) (DPF)
+(FA) = (SA)(SBF) (+) (DA)(DBF)
+
+BlendEnable - Specify true to enable blending for this render target.
+SrcBlend - This is our source blend factor (SBF). We can set this to any of the enumerated D3D11_BLEND types.
+DestBlend - This is our destination blend factor (DBF). We can set this to any of the enumerated D3D11_BLEND types.
+BlendOp - Here is where we specify the blending operation to use which we discussed earlier. Set this to any of the D3D11_BLEND_OP enumerated types.
+SrcBlendAlpha - This is our source blend factor for the alpha channel (SBF). We can set this to any of the enumerated D3D11_BLEND types.
+DestBlendAlpha - This is our destination blend factor for the alpha channel (SBF). We can set this to any of the enumerated D3D11_BLEND types.
+BlendOpAlpha - Here we specify the blending operation to use for the alpha channels. set this to any of the D3D10_BLEND_OP enumerated types.
+RenderTargetWriteMask - This is where we specify which channel to blend. We are able to choose R, G, B, A, All of them, or a combination of them by specifying one of the following flags:

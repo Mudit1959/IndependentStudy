@@ -31,10 +31,10 @@ float checkPos = 0;
 
 
 
-float rectPos[2] = { 40.0f, 40.0f};
+float rectPos[2] = { 200.0f, 200.0f};
 float cameraPos[3] = { 0.0f, 0.0f, 0.0f };
 float scale[3] = { 20.0f, 20.0f, 1.0f };
-float circleRadius = 0.0f;
+float circleRadius = 20.0f;
 unsigned int screenWidth, screenHeight;
 
 // --------------------------------------------------------
@@ -317,6 +317,9 @@ void Game::Draw(float deltaTime, float totalTime)
 		const float backBufferClear[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 		Graphics::Context->ClearRenderTargetView(Graphics::BackBufferRTV.Get(),	backBufferClear);
 		Graphics::Context->ClearDepthStencilView(Graphics::DepthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+
+		// Set blend state to default
+		Graphics::Context->OMSetBlendState(NULL, 0, 0xffffff);
 	}
 	
 
