@@ -31,7 +31,7 @@ float checkPos = 0;
 
 
 
-float rectPos[2] = { 200.0f, 200.0f};
+float rectPos[2] = { 183.0f, 216.0f};
 float cameraPos[3] = { 0.0f, 0.0f, 0.0f };
 float scale[3] = { 20.0f, 20.0f, 1.0f };
 float circleRadius = 20.0f;
@@ -245,7 +245,7 @@ void Game::LoadShadersCreateMaterials()
 void Game::CreateGeometry()
 {
 	entityList.push_back(RectangleEntity(materials[CIRCLE], CIRCLE)); // Create a circle
-	RRect = std::make_shared<RoundedRectangleEntity>(materials[1], materials[2], 
+	RRect = std::make_shared<RoundedRectangleEntity>(materials[RECT], materials[CIRCLE], 
 		DirectX::XMFLOAT2(50,50), 10.0f);
 }
 
@@ -318,8 +318,6 @@ void Game::Draw(float deltaTime, float totalTime)
 		Graphics::Context->ClearRenderTargetView(Graphics::BackBufferRTV.Get(),	backBufferClear);
 		Graphics::Context->ClearDepthStencilView(Graphics::DepthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 
-		// Set blend state to default
-		Graphics::Context->OMSetBlendState(NULL, 0, 0xffffff);
 	}
 	
 

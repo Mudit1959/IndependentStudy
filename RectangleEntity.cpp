@@ -1,7 +1,7 @@
 #include "RectangleEntity.h"
 
 
-RectangleEntity::RectangleEntity(std::shared_ptr<Material> inMaterial, int inKind = 0)
+RectangleEntity::RectangleEntity(std::shared_ptr<Material> inMaterial, int inKind = TD_ENTITY)
 {
 	CreateVertexBuffer();
 	CreateIndexBuffer();
@@ -60,8 +60,27 @@ void RectangleEntity::CreateIndexBuffer()
 	Graphics::Device->CreateBuffer(&ibDesc, &initialIndexData, indexBuffer.GetAddressOf()); // Create the buffer
 }
 
+void SetOpaqueBlendState() 
+{
+	D3D11_BLEND_DESC desc = {};
+	desc.RenderTarget[0].BlendEnable = TRUE;
+	desc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+	desc.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
+	desc.RenderTarget[0].DestBlend = D3D11_BLEND_ZERO;
+	desc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+	desc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+	desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+	desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+
+	ID3D11BlendState* blendState;
+	Graphics::Device->CreateBlendState(&desc, &blendState);
+	Graphics::Context->OMSetBlendState(blendState, 0, 0x000000ff); // MASK NEEDS TO BE 8 fs! Two hexadecimal fs for each channel in RGBA!
+}
+
 void RectangleEntity::DrawRect(unsigned int screenWidth, unsigned int screenHeight)
 {
+	SetOpaqueBlendState();
+
 	UINT stride = sizeof(Vertex);
 	UINT offset = 0;
 
@@ -85,25 +104,14 @@ void RectangleEntity::DrawRect(unsigned int screenWidth, unsigned int screenHeig
 	Graphics::Context->DrawIndexed(indexCount, 0, 0);
 }
 
+
+
 void RectangleEntity::DrawCircle(unsigned int screenWidth, unsigned int screenHeight, float radius)
 {
+	SetOpaqueBlendState();
+
 	UINT stride = sizeof(Vertex);
 	UINT offset = 0;
-
-	D3D11_BLEND_DESC desc = {};
-	desc.RenderTarget[0].BlendEnable = TRUE;
-	desc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
-	desc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
-	desc.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
-	desc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_SRC_ALPHA;
-	desc.RenderTarget[0].DestBlend = D3D11_BLEND_ONE;
-	desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
-	desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
-
-	ID3D11BlendState* blendState;
-	Graphics::Device->CreateBlendState(&desc, &blendState);
-	Graphics::Context->OMSetBlendState(blendState, 0, 0xffffff);
-	
 
 	// MUST SET CONSTANTS FOR VERTEX SHADER
 	RectVSConstants rectVSData = {};
@@ -129,8 +137,6 @@ void RectangleEntity::DrawCircle(unsigned int screenWidth, unsigned int screenHe
 	Graphics::Context->PSSetShader(material->GetPixelShader().Get(), 0, 0);
 
 	Graphics::Context->DrawIndexed(indexCount, 0, 0);
-
-	Graphics::Context->OMSetBlendState(0, 0, 0xffffff);
 }
 
 Transform* RectangleEntity::GetTransform() { return &transform; }

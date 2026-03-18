@@ -108,7 +108,6 @@ void RoundedRectangleEntity::Draw(unsigned int screenWidth, unsigned int screenH
 	else
 	{
 		
-
 		parts[0].DrawRect(screenWidth, screenHeight);
 		parts[1].DrawRect(screenWidth, screenHeight);
 		parts[2].DrawRect(screenWidth, screenHeight);
