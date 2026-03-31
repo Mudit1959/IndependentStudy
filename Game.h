@@ -41,7 +41,9 @@ private:
 	void CreateCamera();
 	void LoadVertexShader(const std::wstring& path);
 	void LoadPixelShader(const std::wstring& path);
+
 	void DefaultInputLayout(ID3DBlob* vertexShaderBlob);
+	void GrowLineInputLayout(ID3DBlob* vertexShaderBlob);
 
 	void DefaultBlendState();
 

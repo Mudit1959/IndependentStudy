@@ -1,5 +1,6 @@
 #include "Game.h"
 #include "Graphics.h"
+#include "DepthBufferHelpers.h"
 #include "Vertex.h"
 #include "Input.h"
 #include "PathHelpers.h"
@@ -166,6 +167,7 @@ void Game::LoadVertexShader(const std::wstring& path)
 
 
 	if (path == L"VertexShader.cso") { Game::DefaultInputLayout(vertexShaderBlob); }
+	if (path == L"GrowLineVS.cso") { Game::GrowLineInputLayout(vertexShaderBlob); }
 }
 
 
@@ -209,6 +211,32 @@ void Game::DefaultInputLayout(ID3DBlob* vertexShaderBlob)
 
 }
 
+void Game::GrowLineInputLayout(ID3DBlob* vertexShaderBlob)
+{
+	inputLayouts.push_back(Microsoft::WRL::ComPtr<ID3D11InputLayout>());
+
+	D3D11_INPUT_ELEMENT_DESC inputLayout[3] = {};
+
+	inputLayout[0].SemanticName = "POSITION";
+	inputLayout[0].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+	inputLayout[0].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+
+	inputLayout[1].SemanticName = "COLOR";
+	inputLayout[1].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	inputLayout[1].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+
+	inputLayout[2].SemanticName = "UV";
+	inputLayout[2].Format = DXGI_FORMAT_R32_FLOAT;
+	inputLayout[2].AlignedByteOffset = D3D10_APPEND_ALIGNED_ELEMENT;
+
+	Graphics::Device->CreateInputLayout(
+		inputLayout,
+		3,
+		vertexShaderBlob->GetBufferPointer(),
+		vertexShaderBlob->GetBufferSize(),
+		inputLayouts[inputLayouts.size() - 1].GetAddressOf());
+}
+
 
 // --------------------------------------------------------
 // Loads the shaders using their precompiled bytecode files (.cso)
@@ -222,16 +250,19 @@ void Game::LoadShadersCreateMaterials()
 	
 	Game::LoadVertexShader(L"VertexShader.cso");
 	Game::LoadVertexShader(L"RectVS.cso");
+	Game::LoadVertexShader(L"GrowLineVS.cso");
 
 	Game::LoadPixelShader(L"BasicPixelShader.cso");
 	Game::LoadPixelShader(L"CirclePS.cso");
+	Game::LoadPixelShader(L"GrowLinePS.cso");
 
+	
 	
 
 	// At this stage -> 
 	// Vertex Shaders - 2 - Default, Scaled Rectangle Vertices
-	// Pixel Shaders - 2 - Default, Circle
-	// Input Layouts - 1 - Default
+	// Pixel Shaders - 2 - Default, Circle, Line
+	// Input Layouts - 2 - Default, Grow Line
 
 	materials.push_back(std::make_shared<Material>(vertexShaders[0], pixelShaders[0], inputLayouts[0])); // Basic
 	materials.push_back(std::make_shared<Material>(vertexShaders[1], pixelShaders[0], inputLayouts[0])); // Rectangles
@@ -245,6 +276,7 @@ void Game::LoadShadersCreateMaterials()
 void Game::CreateGeometry()
 {
 	entityList.push_back(RectangleEntity(materials[CIRCLE], CIRCLE)); // Create a circle
+	entityList.push_back(RectangleEntity(materials[RECT], RECT));
 	RRect = std::make_shared<RoundedRectangleEntity>(materials[RECT], materials[CIRCLE], 
 		DirectX::XMFLOAT2(50,50), 10.0f);
 }
@@ -277,8 +309,13 @@ void Game::Update(float deltaTime, float totalTime)
 	
 	entityList[0].GetTransform()->SetScale(DirectX::XMFLOAT3(&scale[0]));
 	entityList[0].SetTranslateXY(rectPos[0], rectPos[1]);
-	//entityList[0].GetTransform()->Rotate(0.0f, 0.0f, deltaTime * DirectX::XM_PI / 18.0f);
+	
 	entityList[0].GetTransform()->CalculateWorldMatrix();
+
+	entityList[1].GetTransform()->SetScale(20, 20, 1);
+	entityList[1].SetTranslateXY(50, 50);
+	entityList[1].GetTransform()->Rotate(0.0f, 0.0f, deltaTime * DirectX::XM_PI / 5.0f);
+	entityList[1].SetColor(1, 1, 1, 1);
 
 	camera->GetTransform()->SetPosition(DirectX::XMFLOAT3(&cameraPos[0]));
 
@@ -321,12 +358,22 @@ void Game::Draw(float deltaTime, float totalTime)
 	}
 	
 
+
 	// DRAW geometry
 	// - These steps are generally repeated for EACH object you draw
 	// - Other Direct3D calls will also be necessary to do more complex things
 	{
+
+		// -- 2D Geometry --
+
+		DisableDepthBuffer();
+
 		entityList[0].DrawCircle(screenWidth, screenHeight, circleRadius);
+		entityList[1].DrawRect(screenWidth, screenHeight);
 		RRect->Draw(screenWidth, screenHeight);
+
+		RebindDepthBuffer();
+
 	}
 
 	// Frame END
@@ -354,7 +401,7 @@ void Game::Draw(float deltaTime, float totalTime)
 void Game::SetConstantsForFrame(RectangleEntity e) 
 {
 	int k = e.GetKind();
-	if( k == TD_ENTITY)
+	if( k == THREE_D_ENTITY)
 	{
 		VertexShaderConstants vsData = {};
 		vsData.world = e.GetTransform()->GetWorldMatrix();

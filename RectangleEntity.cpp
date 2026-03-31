@@ -1,7 +1,7 @@
 #include "RectangleEntity.h"
 
 
-RectangleEntity::RectangleEntity(std::shared_ptr<Material> inMaterial, int inKind = TD_ENTITY)
+RectangleEntity::RectangleEntity(std::shared_ptr<Material> inMaterial, int inKind = THREE_D_ENTITY)
 {
 	CreateVertexBuffer();
 	CreateIndexBuffer();
@@ -66,10 +66,10 @@ void SetOpaqueBlendState()
 	desc.RenderTarget[0].BlendEnable = TRUE;
 	desc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
 	desc.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
-	desc.RenderTarget[0].DestBlend = D3D11_BLEND_ZERO;
+	desc.RenderTarget[0].DestBlend = D3D11_BLEND_ONE;
 	desc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
-	desc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
-	desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+	desc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_SRC_ALPHA;
+	desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_DEST_ALPHA;
 	desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 
 	ID3D11BlendState* blendState;
@@ -77,8 +77,11 @@ void SetOpaqueBlendState()
 	Graphics::Context->OMSetBlendState(blendState, 0, 0x000000ff); // MASK NEEDS TO BE 8 fs! Two hexadecimal fs for each channel in RGBA!
 }
 
+
+
 void RectangleEntity::DrawRect(unsigned int screenWidth, unsigned int screenHeight)
 {
+
 	SetOpaqueBlendState();
 
 	UINT stride = sizeof(Vertex);
@@ -102,12 +105,15 @@ void RectangleEntity::DrawRect(unsigned int screenWidth, unsigned int screenHeig
 	Graphics::Context->PSSetShader(material->GetPixelShader().Get(), 0, 0);
 
 	Graphics::Context->DrawIndexed(indexCount, 0, 0);
+
+
 }
 
 
 
 void RectangleEntity::DrawCircle(unsigned int screenWidth, unsigned int screenHeight, float radius)
 {
+
 	SetOpaqueBlendState();
 
 	UINT stride = sizeof(Vertex);
@@ -137,6 +143,7 @@ void RectangleEntity::DrawCircle(unsigned int screenWidth, unsigned int screenHe
 	Graphics::Context->PSSetShader(material->GetPixelShader().Get(), 0, 0);
 
 	Graphics::Context->DrawIndexed(indexCount, 0, 0);
+
 }
 
 Transform* RectangleEntity::GetTransform() { return &transform; }

@@ -107,16 +107,17 @@ void RoundedRectangleEntity::Draw(unsigned int screenWidth, unsigned int screenH
 	// - This is for future designs, like having sharp edges on the inside and colored rounded corners
 	else
 	{
-		
+		// COULD USE GetKind() to cycle through entities and render as necessary
+
 		parts[0].DrawRect(screenWidth, screenHeight);
 		parts[1].DrawRect(screenWidth, screenHeight);
 		parts[2].DrawRect(screenWidth, screenHeight);
+
 
 		parts[3].DrawCircle(screenWidth, screenHeight, radius);
 		parts[4].DrawCircle(screenWidth, screenHeight, radius);
 		parts[5].DrawCircle(screenWidth, screenHeight, radius);
 		parts[6].DrawCircle(screenWidth, screenHeight, radius);
-		
 		
 	}
 

@@ -1,5 +1,12 @@
 The default blend state
 
+- To enable blending the depth buffer MUST BE DISABLED
+// Disable depth buffer
+		Graphics::Context->OMSetRenderTargets(
+			1,
+			Graphics::BackBufferRTV.GetAddressOf(),
+			0);
+
 D3D11_BLEND_DESC blendStateDesc = {};
 blendStateDesc.AlphaToCoverageEnable = FALSE;
 blendStateDesc.IndependentBlendEnable = FALSE;
