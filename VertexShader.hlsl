@@ -1,3 +1,12 @@
+#include "ShaderInclude.hlsli"
+
+cbuffer BoxData : register(b0)
+{
+    float2 offset;
+    uint2 screenSize;
+    float2 boxSize;
+    float opacity;
+}
 
 // Struct representing a single vertex worth of data
 // - This should match the vertex definition in our C++ code
@@ -15,21 +24,6 @@ struct VertexShaderInput
 	float4 color			: COLOR;        // RGBA color
 };
 
-// Struct representing the data we're sending down the pipeline
-// - Should match our pixel shader's input (hence the name: Vertex to Pixel)
-// - At a minimum, we need a piece of data defined tagged as SV_POSITION
-// - The name of the struct itself is unimportant, but should be descriptive
-// - Each variable must have a semantic, which defines its usage
-struct VertexToPixel
-{
-	// Data type
-	//  |
-	//  |   Name          Semantic
-	//  |    |                |
-	//  v    v                v
-	float4 screenPosition	: SV_POSITION;	// XYZW position (System Value Position)
-	float4 color			: COLOR;        // RGBA color
-};
 
 // --------------------------------------------------------
 // The entry point (main method) for our vertex shader
@@ -42,6 +36,14 @@ VertexToPixel main( VertexShaderInput input )
 {
 	// Set up output struct
 	VertexToPixel output;
+	
+    float3 finalPos = input.localPosition.xyz;
+    float xIncrement, yIncrement;
+    xIncrement = 2 / (float) screenSize.x;
+    yIncrement = 2 / (float) screenSize.y;
+	
+    finalPos.x = -1 + (boxSize.x * xIncrement * finalPos.x) + (offset.x * xIncrement);
+    finalPos.y = 1 + (boxSize.y * yIncrement * finalPos.y) - (offset.y * yIncrement);
 
 	// Here we're essentially passing the input position directly through to the next
 	// stage (rasterizer), though it needs to be a 4-component vector now.  
@@ -51,12 +53,12 @@ VertexToPixel main( VertexShaderInput input )
 	// - Each of these components is then automatically divided by the W component, 
 	//   which we're leaving at 1.0 for now (this is more useful when dealing with 
 	//   a perspective projection matrix, which we'll get to in the future).
-	output.screenPosition = float4(input.localPosition, 1.0f);
+	output.screenPosition = float4(finalPos, 1.0f);
 
 	// Pass the color through 
 	// - The values will be interpolated per-pixel by the rasterizer
 	// - We don't need to alter it here, but we do need to send it to the pixel shader
-	output.color = input.color;
+    output.color = float4(input.color.xyz, opacity);
 
 	// Whatever we return will make its way through the pipeline to the
 	// next programmable stage we're using (the pixel shader for now)
