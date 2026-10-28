@@ -8,8 +8,6 @@ cbuffer BoxData : register(b0)
     float2 boxSize;
     float opacity;
     float angle;
-	
-    float4x4 worldMatrix;
     
 }
 
@@ -48,19 +46,20 @@ VertexToPixel main( VertexShaderInput input )
 	// *--------*
     float4 finalPos = float4(input.localPosition, 1.0f);
 	
-	
-	
-    float xOnePixel, yOnePixel;
-    xOnePixel = 2.0f / screenSize.x;
-    yOnePixel = 2.0f / screenSize.y;
     
-	
-	
-   
+    float xOnePixel = 2.0f / screenSize.x;
+    float yOnePixel = 2.0f / screenSize.y;
     
-    finalPos = mul(worldMatrix, finalPos);
+    float newX = finalPos.x * boxSize.x;
+    float newY = finalPos.y * boxSize.y;
+    
+	// Rotate the normalised vector
+    finalPos.x = (cos(angle) * newX) - (sin(angle) * newY);
+    finalPos.y = (sin(angle) * newX) + (cos(angle) * newY);
 	
-
+    finalPos.x *= (xOnePixel);
+    finalPos.y *= (yOnePixel);
+    
 	
 	// Then Translate -> using the single pixel increments calculated before, translate the vertices
    

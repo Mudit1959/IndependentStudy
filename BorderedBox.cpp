@@ -49,8 +49,8 @@ void BorderedBox::CreateGeometry()
 	// Rescaling the screen would rescale the quad being rendered too. 
 	Vertex vertices[] =
 	{
-		{ XMFLOAT3(+0.0f, +0.0f, +0.0f), red },
-		{ XMFLOAT3(+1.0f, +0.0f, +0.0f), blue },
+		{ XMFLOAT3(0.0f, 0.0f, +0.0f), red },
+		{ XMFLOAT3(+1.0f, 0.0f, +0.0f), blue },
 		{ XMFLOAT3(+1.0f, -1.0f, +0.0f), green },
 		{ XMFLOAT3(0.0f, -1.0f, +0.0f), blue}
 	};
@@ -267,11 +267,8 @@ void BorderedBox::Draw(float deltaTime)
 		UINT offset = 0; // Start from the beginning or some bytes after?
 		data.screenSize.x = Window::Width();
 		data.screenSize.y = Window::Height();
-		float xOne = (2.0f / data.screenSize.x);
-		float yOne = (2.0f / data.screenSize.y);
 		data.angle += (deltaTime * 20 * PI)/180;
-		DirectX::XMMATRIX world = DirectX::XMMatrixRotationRollPitchYaw(0, 0, data.angle) * DirectX::XMMatrixScaling(xOne * data.boxSize.x, yOne * data.boxSize.y, 1.0f);
-		DirectX::XMStoreFloat4x4(&data.worldMatrix, world);
+		
 
 		// -- BRIEF --
 		{

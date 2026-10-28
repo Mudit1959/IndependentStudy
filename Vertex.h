@@ -22,6 +22,6 @@ struct BoxData
 	float opacity;
 	float angle;
 
-	DirectX::XMFLOAT4X4 worldMatrix;
+	
 
 };
