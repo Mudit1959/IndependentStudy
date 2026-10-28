@@ -46,17 +46,24 @@ VertexToPixel main( VertexShaderInput input )
 	// *--------*
     float4 finalPos = float4(input.localPosition, 1.0f);
 	
-    
+    // Calculate the increment of one pixel one screen both along the X and Y axes
     float xOnePixel = 2.0f / screenSize.x;
     float yOnePixel = 2.0f / screenSize.y;
     
+	// Scaling needs to take place in two stages. 
+	// The first is to scale the box according to the final pixel length and height we want. 
+	// Note that the vertices provided in the vertex shader must all have a magnitude of 1, otherwise, this will not work as intended!
     float newX = finalPos.x * boxSize.x;
     float newY = finalPos.y * boxSize.y;
     
-	// Rotate the normalised vector
-    finalPos.x = (cos(angle) * newX) - (sin(angle) * newY);
-    finalPos.y = (sin(angle) * newX) + (cos(angle) * newY);
+	// Treating each vertex as a vector, we rotate it. 
+	// This can be derived mathematically using trignometric identities
+	// sin(a +- b) = sin(a)cos(b) +- cos(a)sin(b)
+	// cos(a +- b) = cos(a)cos(b) -+ sin(a)sin(b)
+    finalPos.x = (newX * cos(angle)) + (newY * sin(angle));
+    finalPos.y = (newY * cos(angle)) - (newX * sin(angle));
 	
+	// The s
     finalPos.x *= (xOnePixel);
     finalPos.y *= (yOnePixel);
     
