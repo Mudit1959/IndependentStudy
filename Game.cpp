@@ -22,6 +22,9 @@ using namespace DirectX;
 
 BorderedBox* b = new BorderedBox();
 
+float whxy[4];
+
+
 // --------------------------------------------------------
 // The constructor is called after the window and graphics API
 // are initialized but before the game loop begins
@@ -29,7 +32,10 @@ BorderedBox* b = new BorderedBox();
 Game::Game()
 {
 	Game::ImGuiInitialize();
-	
+	whxy[0] = 50;
+	whxy[1] = 50;
+	whxy[2] = 100;
+	whxy[3] = 50;
 	b->CreateGeometry();
 	b->LoadShaders();
 }
@@ -64,10 +70,18 @@ void Game::ImGuiUpdate(float deltaTime)
 void Game::ImGuiBuildUI() 
 {
 	ImGui::Begin("Testing...");
-	if (ImGui::TreeNode("Hello There!")) 
+	
+	if (ImGui::TreeNode("Box Constants")) 
 	{
+		static ImGuiSliderFlags flags = ImGuiSliderFlags_None;
+		ImGui::DragFloat("DragFloat (0 -> Screen Width)", &whxy[2], 0.5f, 0.0f, Window::Width(), "%.3f", flags);
+		ImGui::DragFloat("DragFloat (0 -> Screen Height)", &whxy[3], 0.5f, 0.0f, Window::Height(), "%.3f", flags);
+		ImGui::InputFloat("Width", &whxy[0], 0, 0);
+		ImGui::InputFloat("Height", &whxy[1], 0, 0);
 		ImGui::TreePop();
 	}
+
+
 	ImGui::End();
 }
 
@@ -126,7 +140,10 @@ void Game::Draw(float deltaTime, float totalTime)
 
 	// Frame DRAW
 	{
-		b->Draw();
+		b->SetWidthHeight(whxy[0], whxy[1]);
+		b->SetOpacity(0.5);
+		b->SetXY(whxy[2], whxy[3]);
+		b->Draw(deltaTime);
 	}
 
 	// Frame END

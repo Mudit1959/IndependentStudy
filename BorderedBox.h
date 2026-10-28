@@ -27,11 +27,18 @@ public:
 	BorderedBox();
 	void CreateGeometry();
 	void LoadShaders();
-	void Draw();
+	void Draw(float deltaTime);
+
+	void SetWidthHeight(float x, float y);
+	void SetXY(float x, float y);
+	void SetOpacity(float opacity);
+	
 
 private:
 
 	int vertexCount, indexCount;
+	float angle;
+	
 	BoxData data;
 
 	// We use ComPtr because they are smart pointers, that is, they clean up after themselves. 

@@ -3,9 +3,14 @@
 cbuffer BoxData : register(b0)
 {
     float2 offset;
-    uint2 screenSize;
+    float2 screenSize;
+	
     float2 boxSize;
     float opacity;
+    float angle;
+	
+    float4x4 worldMatrix;
+    
 }
 
 // Struct representing a single vertex worth of data
@@ -24,7 +29,6 @@ struct VertexShaderInput
 	float4 color			: COLOR;        // RGBA color
 };
 
-
 // --------------------------------------------------------
 // The entry point (main method) for our vertex shader
 // 
@@ -37,13 +41,31 @@ VertexToPixel main( VertexShaderInput input )
 	// Set up output struct
 	VertexToPixel output;
 	
-    float3 finalPos = input.localPosition.xyz;
-    float xIncrement, yIncrement;
-    xIncrement = 2 / (float) screenSize.x;
-    yIncrement = 2 / (float) screenSize.y;
+	// At this point, we have the original quad
+	// *--------* top left is the origin to rotate around 
+	// |		|
+	// |		|
+	// *--------*
+    float4 finalPos = float4(input.localPosition, 1.0f);
 	
-    finalPos.x = -1 + (boxSize.x * xIncrement * finalPos.x) + (offset.x * xIncrement);
-    finalPos.y = 1 + (boxSize.y * yIncrement * finalPos.y) - (offset.y * yIncrement);
+	
+	
+    float xOnePixel, yOnePixel;
+    xOnePixel = 2.0f / screenSize.x;
+    yOnePixel = 2.0f / screenSize.y;
+    
+	
+	
+   
+    
+    finalPos = mul(worldMatrix, finalPos);
+	
+
+	
+	// Then Translate -> using the single pixel increments calculated before, translate the vertices
+   
+    finalPos.x += -1 + (xOnePixel * offset.x);
+    finalPos.y += 1 - (yOnePixel * offset.y);
 
 	// Here we're essentially passing the input position directly through to the next
 	// stage (rasterizer), though it needs to be a 4-component vector now.  
@@ -53,7 +75,7 @@ VertexToPixel main( VertexShaderInput input )
 	// - Each of these components is then automatically divided by the W component, 
 	//   which we're leaving at 1.0 for now (this is more useful when dealing with 
 	//   a perspective projection matrix, which we'll get to in the future).
-	output.screenPosition = float4(finalPos, 1.0f);
+	output.screenPosition = finalPos;
 
 	// Pass the color through 
 	// - The values will be interpolated per-pixel by the rasterizer

@@ -4,6 +4,7 @@
 using namespace DirectX;
 
 const float blendFactor[4] = {0.0f,0.0f, 0.0f, 0.0f};
+const float PI = 3.14159265f;
 
 BorderedBox::BorderedBox() 
 {
@@ -12,6 +13,24 @@ BorderedBox::BorderedBox()
 
 	pixelShaderPath = L"PixelShader.cso"; // Path to Pixel Shader
 	vertexShaderPath = L"VertexShader.cso"; // Path to Vertex Shader
+}
+
+void BorderedBox::SetWidthHeight(float x, float y) 
+{
+	if (x < 0 || y < 0) { return; }
+	data.boxSize = DirectX::XMFLOAT2(x, y);	
+}
+
+void BorderedBox::SetXY(float x, float y)
+{
+	if (x < 0 || y < 0) { return; }
+	data.offset = DirectX::XMFLOAT2(x, y);
+}
+
+void BorderedBox::SetOpacity(float opacity)
+{
+	if (opacity < 0) { return; }
+	data.opacity = opacity;
 }
 
 void BorderedBox::CreateGeometry()
@@ -44,11 +63,11 @@ void BorderedBox::CreateGeometry()
 	unsigned int indices[] = { 0, 1, 2, 0, 2, 3 };
 
 	// -- CONSTANTS --
-	data.screenSize.x = Window::Width();
-	data.screenSize.y = Window::Height();
-	data.boxSize = DirectX::XMFLOAT2(200, 200);
-	data.offset = DirectX::XMFLOAT2(100.0f, 50.0f);
+	data.boxSize = DirectX::XMFLOAT2(0, 0);
+	data.offset = DirectX::XMFLOAT2(0, 0);
 	data.opacity = 0.2;
+	data.angle = 0;
+	
 	
 	// -- GRAPHICS -- 
 	{// 
@@ -240,13 +259,19 @@ void BorderedBox::LoadShaders()
 // 
 
 
-void BorderedBox::Draw()
+
+void BorderedBox::Draw(float deltaTime)
 {
 	{
 		UINT stride = sizeof(Vertex); // How big is one vertex of this particular object?
 		UINT offset = 0; // Start from the beginning or some bytes after?
 		data.screenSize.x = Window::Width();
 		data.screenSize.y = Window::Height();
+		float xOne = (2.0f / data.screenSize.x);
+		float yOne = (2.0f / data.screenSize.y);
+		data.angle += (deltaTime * 20 * PI)/180;
+		DirectX::XMMATRIX world = DirectX::XMMatrixRotationRollPitchYaw(0, 0, data.angle) * DirectX::XMMatrixScaling(xOne * data.boxSize.x, yOne * data.boxSize.y, 1.0f);
+		DirectX::XMStoreFloat4x4(&data.worldMatrix, world);
 
 		// -- BRIEF --
 		{

@@ -16,7 +16,12 @@ struct Vertex
 struct BoxData 
 {
 	DirectX::XMFLOAT2 offset;
-	DirectX::XMUINT2 screenSize;
+	DirectX::XMFLOAT2 screenSize;
+
 	DirectX::XMFLOAT2 boxSize;
 	float opacity;
+	float angle;
+
+	DirectX::XMFLOAT4X4 worldMatrix;
+
 };
