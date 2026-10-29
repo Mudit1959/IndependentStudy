@@ -14,6 +14,12 @@
 
 #include "PathHelpers.h"
 
+enum Kind 
+{
+	Box, 
+	SmoothLine, 
+	Circle
+};
 
 /// <summary>
 /// A way to draw a 2D box for UI
@@ -31,7 +37,10 @@ public:
 
 	void SetWidthHeight(float x, float y);
 	void SetXY(float x, float y);
+	void SetColor(float r, float g, float b);
+	void SetInvSmoothIntensity(float i);
 	void SetOpacity(float opacity);
+	void SetKind(Kind k = Box);
 	
 
 private:
@@ -54,10 +63,13 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> indexBuffer;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> constantBuffer;
+
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout;
 	Microsoft::WRL::ComPtr<ID3D11BlendState> blendState;
 
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShader;
+	Microsoft::WRL::ComPtr<ID3D11PixelShader> circlePixelShader;
+	Microsoft::WRL::ComPtr<ID3D11PixelShader> smoothLinePixelShader;
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader;
 
 	ID3DBlob* vertexShaderBlob;
@@ -65,6 +77,10 @@ private:
 
 	std::wstring vertexShaderPath;
 	std::wstring pixelShaderPath;
+	std::wstring smoothLinePSPath;
+	std::wstring circlePSPath;
+
+	Kind kind;
 
 
 };

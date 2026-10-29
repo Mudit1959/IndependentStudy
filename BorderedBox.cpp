@@ -6,13 +6,23 @@ using namespace DirectX;
 const float blendFactor[4] = {0.0f,0.0f, 0.0f, 0.0f};
 const float PI = 3.14159265f;
 
+
+
 BorderedBox::BorderedBox() 
 {
-	vertexCount = 4;
-	indexCount = 6;
-
+	vertexCount = 4; // Every box is made of 4 vertices
+	indexCount = 6; 
+	SetKind(); // By default, the box 
 	pixelShaderPath = L"PixelShader.cso"; // Path to Pixel Shader
-	vertexShaderPath = L"VertexShader.cso"; // Path to Vertex Shader
+	vertexShaderPath = L"VertexShaderBox.cso"; // Path to Vertex Shader
+	circlePSPath = L"circlePixelShader.cso"; // Path to circle shader
+	smoothLinePSPath = L"smoothLinePixelShader.cso"; // Path to smooth line shader
+
+}
+
+void BorderedBox::SetKind(Kind k)
+{
+	kind = k;
 }
 
 void BorderedBox::SetWidthHeight(float x, float y) 
@@ -33,6 +43,17 @@ void BorderedBox::SetOpacity(float opacity)
 	data.opacity = opacity;
 }
 
+void BorderedBox::SetColor(float r, float g, float b) 
+{
+	data.color = DirectX::XMFLOAT3(r, g, b);
+}
+
+void BorderedBox::SetInvSmoothIntensity(float i)
+{
+	if (i < 0) { return; }
+	data.inverseSmoothIntensity = i;
+}
+
 void BorderedBox::CreateGeometry()
 {
 
@@ -49,10 +70,10 @@ void BorderedBox::CreateGeometry()
 	// Rescaling the screen would rescale the quad being rendered too. 
 	Vertex vertices[] =
 	{
-		{ XMFLOAT3(0.0f, 0.0f, +0.0f), red },
-		{ XMFLOAT3(+1.0f, 0.0f, +0.0f), blue },
-		{ XMFLOAT3(+1.0f, -1.0f, +0.0f), green },
-		{ XMFLOAT3(0.0f, -1.0f, +0.0f), blue}
+		{ XMFLOAT3(0.0f, 0.0f, +0.0f), XMFLOAT2(0, 0)},
+		{ XMFLOAT3(+1.0f, 0.0f, +0.0f), XMFLOAT2(1, 0) },
+		{ XMFLOAT3(+1.0f, -1.0f, +0.0f), XMFLOAT2(1, 1) },
+		{ XMFLOAT3(0.0f, -1.0f, +0.0f), XMFLOAT2(0, 1)}
 	};
 
 	// -- INDICES ARRAY --
@@ -65,7 +86,7 @@ void BorderedBox::CreateGeometry()
 	// -- CONSTANTS --
 	data.boxSize = DirectX::XMFLOAT2(0, 0);
 	data.offset = DirectX::XMFLOAT2(0, 0);
-	data.opacity = 0.2;
+	data.opacity = 0.2f;
 	data.angle = 0;
 	
 	
@@ -173,6 +194,26 @@ void BorderedBox::LoadShaders()
 			vertexShaderBlob->GetBufferSize(),		// How big is the blob?
 			0,										
 			vertexShader.GetAddressOf());			// Where should the D3D11 object be linked once created?
+
+		// The vertex shader blob MUST NOT BE EDITED before creating the necessary input layout. 
+		// I can reuse the pixel shader blob to create more pixel shaders. 
+
+		// ----- Smooth Line Pixel Shader ------
+		D3DReadFileToBlob(FixPath(smoothLinePSPath).c_str(), &pixelShaderBlob);
+		Graphics::Device->CreatePixelShader(
+			pixelShaderBlob->GetBufferPointer(), // Where is the blob located?	
+			pixelShaderBlob->GetBufferSize(),	// How big is the blob?
+			0,
+			smoothLinePixelShader.GetAddressOf());	// Where should the D3D11 object be linked once created?
+
+		// ----- Circle Pixel Shader ------
+		D3DReadFileToBlob(FixPath(circlePSPath).c_str(), &pixelShaderBlob);
+		Graphics::Device->CreatePixelShader(
+			pixelShaderBlob->GetBufferPointer(), // Where is the blob located?	
+			pixelShaderBlob->GetBufferSize(),	// How big is the blob?
+			0,
+			circlePixelShader.GetAddressOf());	// Where should the D3D11 object be linked once created?
+
 	}
 
 	// -- INPUT LAYOUT --
@@ -181,24 +222,23 @@ void BorderedBox::LoadShaders()
 		// Crucial to get right. 
 		// The rest of the pieline breaks if the input layout does not match the vertex struct in the vertex shader.
 		//
-
+		const int inputNums = 2;
 		// For each data member in a vertex, create a description
-		D3D11_INPUT_ELEMENT_DESC inputElements[2] = {};
+		D3D11_INPUT_ELEMENT_DESC inputElements[inputNums] = {};
 
 		
 		inputElements[0].Format = DXGI_FORMAT_R32G32B32_FLOAT;	// What kind of data member is it? (3 floats, one int, 2 doubles, etc.)	
 		inputElements[0].SemanticName = "POSITION";				// What semantic is used to refer to it within the Vertex shader?
 		inputElements[0].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;	// Is there any offset? Or does the data member come right after the previous one?
 
-		
-		inputElements[1].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;			
-		inputElements[1].SemanticName = "COLOR";							
-		inputElements[1].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;	
+		inputElements[1].Format = DXGI_FORMAT_R32G32_FLOAT;
+		inputElements[1].SemanticName = "UVCOORD";
+		inputElements[1].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
 
 		// Create the input layout, referring to the descriptions made, and the vertex shader blob.
 		Graphics::Device->CreateInputLayout(
 			inputElements,							// Array of descriptions
-			2,										// How many data members does each vertex have?
+			inputNums,										// How many data members does each vertex have?
 			vertexShaderBlob->GetBufferPointer(),	// Where is the vertex shader blob located?
 			vertexShaderBlob->GetBufferSize(),		// How big is the vertex shader blob?
 			inputLayout.GetAddressOf());			// Where should the D3D11 Input Layout be linked once created?
@@ -262,14 +302,7 @@ void BorderedBox::LoadShaders()
 
 void BorderedBox::Draw(float deltaTime)
 {
-	{
-		UINT stride = sizeof(Vertex); // How big is one vertex of this particular object?
-		UINT offset = 0; // Start from the beginning or some bytes after?
-		data.screenSize.x = Window::Width();
-		data.screenSize.y = Window::Height();
-		data.angle += (deltaTime * 20 * PI)/180;
-		
-
+	{	
 		// -- BRIEF --
 		{
 			// Before we draw, we need to know which vertices to render, in what order, in what manner, which shaders to use, at minimum.
@@ -296,12 +329,34 @@ void BorderedBox::Draw(float deltaTime)
 
 		// -- SET SHADERS -- 
 		{
+			data.screenSize.x = Window::Width();
+			data.screenSize.y = Window::Height();
+			data.angle = (20 * PI) / 180;
+			
 			Graphics::Context->VSSetShader(vertexShader.Get(), 0, 0);
-			Graphics::Context->PSSetShader(pixelShader.Get(), 0, 0);
+			switch (kind) 
+			{
+				case Box:
+					Graphics::Context->PSSetShader(pixelShader.Get(), 0, 0);
+					break;
+
+				case SmoothLine:
+					Graphics::Context->PSSetShader(smoothLinePixelShader.Get(), 0, 0);
+					SetInvSmoothIntensity(20);
+					break;
+
+				case Circle:
+					Graphics::Context->PSSetShader(circlePixelShader.Get(), 0, 0);
+					break;
+
+			}
+			
 		}
 
 		// -- BIND VERTEX AND INDEX BUFFERS --
 		{
+			UINT stride = sizeof(Vertex); // How big is one vertex of this particular object?
+			UINT offset = 0; // Start from the beginning or some bytes after?
 			Graphics::Context->IASetVertexBuffers(0, 1, vertexBuffer.GetAddressOf(), &stride, &offset);
 			Graphics::Context->IASetIndexBuffer(indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 		}

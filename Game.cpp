@@ -23,6 +23,7 @@ using namespace DirectX;
 BorderedBox* b = new BorderedBox();
 
 float whxy[4];
+float objColor[4] = {255, 0, 0, 100};
 
 
 // --------------------------------------------------------
@@ -38,6 +39,7 @@ Game::Game()
 	whxy[3] = 50;
 	b->CreateGeometry();
 	b->LoadShaders();
+	b->SetKind(SmoothLine);
 }
 
 void Game::ImGuiInitialize() 
@@ -78,6 +80,7 @@ void Game::ImGuiBuildUI()
 		ImGui::DragFloat("DragFloat (0 -> Screen Height)", &whxy[3], 0.5f, 0.0f, Window::Height(), "%.3f", flags);
 		ImGui::InputFloat("Width", &whxy[0], 0, 0);
 		ImGui::InputFloat("Height", &whxy[1], 0, 0);
+		ImGui::ColorEdit4("Color", &objColor[0], ImGuiColorEditFlags_Float | ImGuiColorEditFlags_None);
 		ImGui::TreePop();
 	}
 
@@ -141,8 +144,9 @@ void Game::Draw(float deltaTime, float totalTime)
 	// Frame DRAW
 	{
 		b->SetWidthHeight(whxy[0], whxy[1]);
-		b->SetOpacity(0.5);
+		b->SetOpacity(objColor[3]);
 		b->SetXY(whxy[2], whxy[3]);
+		b->SetColor(objColor[0], objColor[1], objColor[2]);
 		b->Draw(deltaTime);
 	}
 

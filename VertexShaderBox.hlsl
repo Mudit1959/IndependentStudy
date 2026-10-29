@@ -9,23 +9,12 @@ cbuffer BoxData : register(b0)
     float opacity;
     float angle;
     
+    float3 color;
+    float smoothIntensity;
+	
 }
 
-// Struct representing a single vertex worth of data
-// - This should match the vertex definition in our C++ code
-// - By "match", I mean the size, order and number of members
-// - The name of the struct itself is unimportant, but should be descriptive
-// - Each variable must have a semantic, which defines its usage
-struct VertexShaderInput
-{ 
-	// Data type
-	//  |
-	//  |   Name          Semantic
-	//  |    |                |
-	//  v    v                v
-	float3 localPosition	: POSITION;     // XYZ position
-	float4 color			: COLOR;        // RGBA color
-};
+
 
 // --------------------------------------------------------
 // The entry point (main method) for our vertex shader
@@ -53,6 +42,9 @@ VertexToPixel main( VertexShaderInput input )
 	// Scaling needs to take place in two stages. 
 	// The first is to scale the box according to the final pixel length and height we want. 
 	// Note that the vertices provided in the vertex shader must all have a magnitude of 1, otherwise, this will not work as intended!
+	
+	// Since I am doing the matrix math manually, it is very important to store the X and Y in their own variables before rotation is applied!
+	// Otherwise there will be all kinds of weird skewing - costed me 4 hours one day, and I figured it out on the bus back!
     float newX = finalPos.x * boxSize.x;
     float newY = finalPos.y * boxSize.y;
     
@@ -60,16 +52,20 @@ VertexToPixel main( VertexShaderInput input )
 	// This can be derived mathematically using trignometric identities
 	// sin(a +- b) = sin(a)cos(b) +- cos(a)sin(b)
 	// cos(a +- b) = cos(a)cos(b) -+ sin(a)sin(b)
+	
+	// I implemented clockwise rotation, which helped me refresh my math skills too!
     finalPos.x = (newX * cos(angle)) + (newY * sin(angle));
     finalPos.y = (newY * cos(angle)) - (newX * sin(angle));
 	
-	// The s
+	// Once the points have been shifted, we now apply the single pixel ratio calculated for each axis 
+	// to correctly map it on screen.
+	// This is the 'second scaling'. - costed me 1 hour to figure out
     finalPos.x *= (xOnePixel);
     finalPos.y *= (yOnePixel);
     
 	
 	// Then Translate -> using the single pixel increments calculated before, translate the vertices
-   
+	// The vertices are translated from the top left corner of the screen, with positive X to the right, and positive Y going down.
     finalPos.x += -1 + (xOnePixel * offset.x);
     finalPos.y += 1 - (yOnePixel * offset.y);
 
@@ -81,12 +77,18 @@ VertexToPixel main( VertexShaderInput input )
 	// - Each of these components is then automatically divided by the W component, 
 	//   which we're leaving at 1.0 for now (this is more useful when dealing with 
 	//   a perspective projection matrix, which we'll get to in the future).
+	
+	// In this case, since everything is 2D, I do not care about the z or w values. 
+	// Still good to pass them. Maybe based on the z values, I can differentiate between UI elements
+	
 	output.screenPosition = finalPos;
-
+    
 	// Pass the color through 
 	// - The values will be interpolated per-pixel by the rasterizer
 	// - We don't need to alter it here, but we do need to send it to the pixel shader
-    output.color = float4(input.color.xyz, opacity);
+    output.color = float4(color.rgb, opacity);
+    output.uv = input.uv;
+    output.smoothIntensity = smoothIntensity;
 
 	// Whatever we return will make its way through the pipeline to the
 	// next programmable stage we're using (the pixel shader for now)
