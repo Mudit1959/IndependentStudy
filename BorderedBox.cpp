@@ -167,6 +167,85 @@ void BorderedBox::CreateGeometry()
 
 		Graphics::Device->CreateBuffer(&cbd, 0, constantBuffer.GetAddressOf());
 	}
+
+	// -- SMOOTH LINE --
+	{
+		// For a smooth line, I want to anchor the line on the midpoint of the left vertical edge of the box for rotation, offset. 
+		// Done by rendering three triangles instead of two, using the four corners and the anchor point as my vertices. 
+
+		smoothVertCount = 5;
+		smoothIndexCount = 9;
+
+		// -- VERTEX ARRAY --
+		// Holds all the vertices necessary to display a quad. 
+		// The vertex coordinates are known as "normalized device coordinates" or "homogenous screen coordinates". 
+		// These coordinates represent a position in space on the screen, relative to the screen resolution
+		// Rescaling the screen would rescale the quad being rendered too. 
+			Vertex smoothVertices[] =
+			{
+				{ XMFLOAT3(0.0f, 0.0f, +0.0f), XMFLOAT2(0, 0.5)},
+				{ XMFLOAT3(0.0f, +0.5f, +0.0f), XMFLOAT2(0, 0) },
+				{ XMFLOAT3(+1.0f, +0.5f, +0.0f), XMFLOAT2(1, 0) },
+				{ XMFLOAT3(+1.0f, -0.5f, +0.0f), XMFLOAT2(1, 1)},
+				{ XMFLOAT3(+0.0f, -0.5f, +0.0f), XMFLOAT2(0, 1)},
+			};
+
+			// -- INDICES ARRAY --
+			// The order in which to render vertices on-screen (clockwise)
+			// Every quad is made up of 2 triangles
+			// So we feed in 6 indices -> 3 each to define the triangles. 
+			// An indices array saves memory when rendering millions of quads. 
+			unsigned int smoothIndices[] = { 0, 1, 2, 0, 2, 3, 0, 3, 4};
+
+			// -- RESOURCE CREATION --
+			// 1) Define the kind of memory buffer you need.
+			// 2) Optionally initialize it with some pre-defined data.
+			// 3) Ask the API to create it. 
+
+			// -- VERTEX BUFFER --
+			{
+				// 1) Defining the vertex buffer characteristics
+				D3D11_BUFFER_DESC vbd = {};
+				vbd.Usage = D3D11_USAGE_IMMUTABLE; // We will never try to change data during runtime
+				vbd.ByteWidth = sizeof(Vertex) * smoothVertCount;  // How big is the buffer?
+				vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER; // What kind of buffer should it be treated as at runtime? (when binded!)
+				vbd.CPUAccessFlags = 0;	// Can the CPU access this data during run-time (NO! = 0)
+				vbd.MiscFlags = 0;
+				vbd.StructureByteStride = 0;
+
+				// 2) Providing pre-set vertex data
+				D3D11_SUBRESOURCE_DATA initialVertexData = {}; // via a struct that points to the data on system memory 
+				initialVertexData.pSysMem = smoothVertices; // pSysMem -> Pointer to system memory
+
+				// 3) Create the buffer
+
+				//  For debugging, "almost all methods return an HRESULT"
+				// Check if the HRESULT was S_OK, if not you can print the debug logs/error message
+				//
+
+				Graphics::Device->CreateBuffer(&vbd, &initialVertexData, smoothLineVertexBuffer.GetAddressOf());
+			}
+
+			// -- INDEX BUFFER --
+			{
+				// 1) Defining the need for an index buffer 
+				D3D11_BUFFER_DESC ibd = {};
+				ibd.Usage = D3D11_USAGE_IMMUTABLE;	// Will not change data during runtime
+				ibd.ByteWidth = sizeof(unsigned int) * smoothIndexCount;	// Size of the index array (how many indices? * size of each index)
+				ibd.BindFlags = D3D11_BIND_INDEX_BUFFER;	// What kind of buffer should it be treated as at runtime? (when binded!)
+				ibd.CPUAccessFlags = 0;	// CPU should not be able to access the data (0)
+				ibd.MiscFlags = 0;
+				ibd.StructureByteStride = 0; // Should I skip some initial block of data?
+
+				// 2) Optionally loading it with pre-defined indices order
+				D3D11_SUBRESOURCE_DATA initialIndexData = {};
+				initialIndexData.pSysMem = smoothIndices; // pSysMem -> pointer to System Memory
+
+				// 3) Asking the GPU to create this resource via the API. 
+				Graphics::Device->CreateBuffer(&ibd, &initialIndexData, smoothLineIndexBuffer.GetAddressOf());
+			}
+	}
+
 }
 
 void BorderedBox::LoadShaders() 
@@ -331,7 +410,7 @@ void BorderedBox::Draw(float deltaTime)
 		{
 			data.screenSize.x = Window::Width();
 			data.screenSize.y = Window::Height();
-			data.angle = (20 * PI) / 180;
+			data.angle += (deltaTime * 20 * PI) / 180;
 			
 			Graphics::Context->VSSetShader(vertexShader.Get(), 0, 0);
 			switch (kind) 
@@ -342,7 +421,7 @@ void BorderedBox::Draw(float deltaTime)
 
 				case SmoothLine:
 					Graphics::Context->PSSetShader(smoothLinePixelShader.Get(), 0, 0);
-					SetInvSmoothIntensity(20);
+					SetInvSmoothIntensity(2);
 					break;
 
 				case Circle:
@@ -357,8 +436,20 @@ void BorderedBox::Draw(float deltaTime)
 		{
 			UINT stride = sizeof(Vertex); // How big is one vertex of this particular object?
 			UINT offset = 0; // Start from the beginning or some bytes after?
-			Graphics::Context->IASetVertexBuffers(0, 1, vertexBuffer.GetAddressOf(), &stride, &offset);
-			Graphics::Context->IASetIndexBuffer(indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+
+			switch (kind) 
+			{
+				case SmoothLine:
+					Graphics::Context->IASetVertexBuffers(0, 1, smoothLineVertexBuffer.GetAddressOf(), &stride, &offset);
+					Graphics::Context->IASetIndexBuffer(smoothLineIndexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+					break;
+
+				default:
+					Graphics::Context->IASetVertexBuffers(0, 1, vertexBuffer.GetAddressOf(), &stride, &offset);
+					Graphics::Context->IASetIndexBuffer(indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+					break;
+			}
+			
 		}
 
 		// -- WRITE TO AND BIND CONSTANT BUFFER --
@@ -379,9 +470,17 @@ void BorderedBox::Draw(float deltaTime)
 			Graphics::Context->OMSetBlendState(blendState.Get(),blendFactor,0xffffff);
 		}
 		
-		Graphics::Context->DrawIndexed(
-			6,
-			0,
-			0);
+		// -- DRAW TRIANGLES BASED ON INDICES --
+		switch (kind) 
+		{
+			case SmoothLine:
+				Graphics::Context->DrawIndexed(smoothIndexCount,0,0);
+				break;
+
+			default:
+				Graphics::Context->DrawIndexed(indexCount,0,0);
+				break;
+		}
+		
 	}
 }

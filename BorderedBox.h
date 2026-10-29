@@ -45,7 +45,7 @@ public:
 
 private:
 
-	int vertexCount, indexCount;
+	int vertexCount, indexCount, smoothVertCount, smoothIndexCount;
 	float angle;
 	
 	BoxData data;
@@ -62,6 +62,8 @@ private:
 
 	Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> indexBuffer;
+	Microsoft::WRL::ComPtr<ID3D11Buffer> smoothLineVertexBuffer;
+	Microsoft::WRL::ComPtr<ID3D11Buffer> smoothLineIndexBuffer;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> constantBuffer;
 
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout;
