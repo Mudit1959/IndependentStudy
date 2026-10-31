@@ -24,6 +24,7 @@ enum Kind
 /// <summary>
 /// A way to draw a 2D box for UI
 /// Every box would have a constant vertex count -> 4, and index count -> 6
+/// Every smooth line would have a constant vertex count -> 5, and index count -> 9
 /// </summary>
 class BorderedBox 
 {
@@ -38,6 +39,7 @@ public:
 	void SetWidthHeight(float x, float y);
 	void SetXY(float x, float y);
 	void SetColor(float r, float g, float b);
+	void SetAngle(float a);
 	void SetInvSmoothIntensity(float i);
 	void SetOpacity(float opacity);
 	void SetKind(Kind k = Box);

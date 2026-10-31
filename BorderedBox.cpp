@@ -48,6 +48,11 @@ void BorderedBox::SetColor(float r, float g, float b)
 	data.color = DirectX::XMFLOAT3(r, g, b);
 }
 
+void BorderedBox::SetAngle(float a) 
+{
+	data.angle = a;
+}
+
 void BorderedBox::SetInvSmoothIntensity(float i)
 {
 	if (i < 0) { return; }
@@ -410,7 +415,6 @@ void BorderedBox::Draw(float deltaTime)
 		{
 			data.screenSize.x = Window::Width();
 			data.screenSize.y = Window::Height();
-			data.angle += (deltaTime * 20 * PI) / 180;
 			
 			Graphics::Context->VSSetShader(vertexShader.Get(), 0, 0);
 			switch (kind) 

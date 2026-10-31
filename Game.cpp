@@ -6,6 +6,7 @@
 #include "Window.h"
 
 #include "BorderedBox.h"
+#include "Branch.h"
 
 // ImGui header files
 #include "ImGui/imgui.h"
@@ -20,7 +21,9 @@
 // For the DirectX Math library
 using namespace DirectX;
 
-BorderedBox* b = new BorderedBox();
+
+Branch* branch;
+BorderedBox* renderBox;
 
 float whxy[4];
 float objColor[4] = {255, 0, 0, 100};
@@ -37,9 +40,13 @@ Game::Game()
 	whxy[1] = 50;
 	whxy[2] = 100;
 	whxy[3] = 50;
-	b->CreateGeometry();
-	b->LoadShaders();
-	b->SetKind(SmoothLine);
+	renderBox = new BorderedBox();
+	renderBox->CreateGeometry();
+	renderBox->LoadShaders();
+
+	branch = new Branch(80, 80, 100, 50, 50);
+	branch->AddNode(40, -20);
+	
 }
 
 void Game::ImGuiInitialize() 
@@ -100,6 +107,11 @@ Game::~Game()
 	ImGui_ImplDX11_Shutdown();
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
+
+	// Clean Up BorderedBox object
+	delete branch;
+	delete renderBox;
+	
 }
 
 
@@ -143,11 +155,7 @@ void Game::Draw(float deltaTime, float totalTime)
 
 	// Frame DRAW
 	{
-		b->SetWidthHeight(whxy[0], whxy[1]);
-		b->SetOpacity(objColor[3]);
-		b->SetXY(whxy[2], whxy[3]);
-		b->SetColor(objColor[0], objColor[1], objColor[2]);
-		b->Draw(deltaTime);
+		branch->Draw(deltaTime, renderBox);
 	}
 
 	// Frame END
