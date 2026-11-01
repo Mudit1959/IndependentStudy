@@ -1,17 +1,12 @@
 #include "Branch.h"
 #include <cmath>
 
-Branch::Branch(float x, float y, float startRadius, float endRelX, float endRelY)
+Branch::Branch(float x, float y, float d, float endRelX, float endRelY, float endD)
 {
-	wholeOffset.x = x;
-	wholeOffset.y = y;
-
-	int factor = startRadius < endNodeRadius ? 1 : -1;
-
-
-	nodesRelativeXY[0] = DirectX::XMFLOAT2(0, 0);
+	wholeOffset = DirectX::XMFLOAT2(x, y);
+	nodesDiameter[0] = d;
 	nodeCount = 1;
-	AddNode(endRelX, endRelY);
+	AddNode(endRelX, endRelY, endD);
 	
 
 	distCovered = 0;
@@ -19,29 +14,38 @@ Branch::Branch(float x, float y, float startRadius, float endRelX, float endRelY
 
 Branch::~Branch() 
 {
-	delete renderBox;
 }
 
-void Branch::AddNode(float relX, float relY)
+void Branch::AddNode(float relX, float relY, float diameter)
 {
-	if (nodeCount > 9) 
+	if (nodeCount == 10) 
 	{
 		return;
 	}
 
-	nodesRelativeXY[nodeCount].x = relX;
-	nodesRelativeXY[nodeCount].y = relY;
-	CalculateDistance(++nodeCount);
-	sizeDifference = abs(startRadius - endNodeRadius) / nodeCount;
+	nodesRelativeXY[nodeCount] = DirectX::XMFLOAT2(relX, relY);
+	nodesDiameter[nodeCount] = diameter;
+	nodeCount++;
+	CalculateDistance(nodeCount);
 }
 
-float Branch::CalculateDistance(int index)
+void Branch::PopNode() 
 {
-	if (index == 0) { return 0; }
-	if (index > maxNodes - 1) { return -1; }
+	if (nodeCount == 2) { return; }
+	nodesRelativeXY[nodeCount].x = -1;
+	nodesRelativeXY[nodeCount].y = -1;
+	nodesDiameter[nodeCount] = 0;
+	nodeCount--;
+	CalculateDistance(nodeCount);
+}
+
+void Branch::CalculateDistance(int nodes)
+{
+	if (nodes < 2) { return; }
+	if (nodes > maxNodes) { return; }
 	int counter = 1;
 	DirectX::XMFLOAT2 xy;
-	while (counter < index) 
+	while (counter < nodes) 
 	{
 		xy = nodesRelativeXY[counter];
 		relativeDistances[counter-1] = std::sqrtf(std::powf(xy.x, 2) + std::powf(xy.y, 2));
@@ -52,26 +56,51 @@ float Branch::CalculateDistance(int index)
 
 void Branch::Draw(float deltaTime, BorderedBox* renderBox)
 {
+	int counter;
+	float xOffset, yOffset;
+
 	// -- RENDER LINES FIRST --
 	renderBox->SetKind(SmoothLine);
+	renderBox->SetInvSmoothIntensity(7);
 	renderBox->SetOpacity(1);
-	int counter = 0;
-	float xOffset = wholeOffset.x;
-	float yOffset = wholeOffset.y;
-	while (counter < nodeCount - 1) 
+	counter = 0;
+	xOffset = wholeOffset.x;
+	yOffset = wholeOffset.y;
+	while (counter < nodeCount - 1)
 	{
 		xOffset += nodesRelativeXY[counter].x;
 		yOffset += nodesRelativeXY[counter].y;
 		renderBox->SetWidthHeight(relativeDistances[counter], 5);
 		renderBox->SetXY(xOffset, yOffset);
-		renderBox->SetColor(1, 0, 0);
+		renderBox->SetColor(1, 1, 1);
 		renderBox->SetAngle(angles[counter]);
 		renderBox->Draw(deltaTime);
 		counter++;
 	}
-	
-	
-	
+
+	// -- RENDER CIRCLES NEXT --
+	renderBox->SetKind(Circle);
+	renderBox->SetOpacity(1);
+	renderBox->SetAngle(0);
+	float drawDiameter, drawRadius;
+	counter = 0;
+	xOffset = wholeOffset.x;
+	yOffset = wholeOffset.y;
+	while (counter < nodeCount)
+	{
+		xOffset += nodesRelativeXY[counter].x;
+		yOffset += nodesRelativeXY[counter].y;
+		drawDiameter = nodesDiameter[counter];
+		drawRadius = drawDiameter / 2;
+		renderBox->SetWidthHeight(drawDiameter, drawDiameter);
+		renderBox->SetXY(xOffset - drawRadius, yOffset - drawRadius);
+		renderBox->Draw(deltaTime);
+		counter++;
+	}
+
+	renderBox->SetWidthHeight(nodesDiameter[0], nodesDiameter[0]);
+	renderBox->SetXY(wholeOffset.x + 30, wholeOffset.y);
+	renderBox->Draw(deltaTime);
 	
 	
 }

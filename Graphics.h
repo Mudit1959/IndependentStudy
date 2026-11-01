@@ -27,6 +27,13 @@ namespace Graphics
 	inline Microsoft::WRL::ComPtr<ID3D11RenderTargetView> BackBufferRTV;
 	inline Microsoft::WRL::ComPtr<ID3D11DepthStencilView> DepthBufferDSV;
 
+	// -- No Z Buffer --
+	void DisableZBuffer();
+	void EnableZBuffer();
+	inline Microsoft::WRL::ComPtr<ID3D11DepthStencilState> noDepthBufferState;
+	inline Microsoft::WRL::ComPtr<ID3D11DepthStencilState> defaultDepthState;
+
+
 	// Debug Layer
 	inline Microsoft::WRL::ComPtr<ID3D11InfoQueue> InfoQueue;
 

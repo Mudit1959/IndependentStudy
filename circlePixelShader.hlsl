@@ -10,5 +10,5 @@ float4 main(VertexToPixel input) : SV_TARGET
 {
     float r = distance(input.uv, float2(0.5, 0.5));
     float c = 1 - smoothstep(0.45, 0.5, r);
-	return float4(input.color.rgb, c);
+    return float4(input.color.rgb, min(input.color.a, c));
 }

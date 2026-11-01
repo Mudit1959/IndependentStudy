@@ -174,6 +174,44 @@ HRESULT Graphics::Initialize(unsigned int windowWidth, unsigned int windowHeight
 	// Create buffer
 	Device->CreateBuffer(&ringBufferDesc, 0, ConstBufferHeap.GetAddressOf());
 
+	// -- DISABLE Z BUFFER -- 
+	D3D11_DEPTH_STENCIL_DESC depthStencilDesc = {};
+	depthStencilDesc.DepthEnable = false;
+	depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
+	depthStencilDesc.StencilEnable = true;
+	depthStencilDesc.StencilReadMask = 0xFF;
+	depthStencilDesc.StencilWriteMask = 0xFF;
+	depthStencilDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	depthStencilDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;
+	depthStencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+	depthStencilDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+	depthStencilDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	depthStencilDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;
+	depthStencilDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+	depthStencilDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+
+	Device->CreateDepthStencilState(&depthStencilDesc, noDepthBufferState.GetAddressOf());
+
+	// -- ENABLE Z BUFFER --
+	depthStencilDesc = {};
+	depthStencilDesc.DepthEnable = true;
+	depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
+	depthStencilDesc.StencilEnable = true;
+	depthStencilDesc.StencilReadMask = 0xFF;
+	depthStencilDesc.StencilWriteMask = 0xFF;
+	depthStencilDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	depthStencilDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;
+	depthStencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+	depthStencilDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+	depthStencilDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	depthStencilDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;
+	depthStencilDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+	depthStencilDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+
+	Device->CreateDepthStencilState(&depthStencilDesc, defaultDepthState.GetAddressOf());
+
 
 #if defined(DEBUG) || defined(_DEBUG)
 	// If we're in debug mode, set up the info queue to
@@ -182,9 +220,12 @@ HRESULT Graphics::Initialize(unsigned int windowWidth, unsigned int windowHeight
 	Device->QueryInterface(IID_PPV_ARGS(debug.GetAddressOf()));
 	debug->QueryInterface(IID_PPV_ARGS(InfoQueue.GetAddressOf()));
 #endif
-
+	
 	return S_OK;
 }
+
+void Graphics::EnableZBuffer() { Context->OMSetDepthStencilState(defaultDepthState.Get(), 1); }
+void Graphics::DisableZBuffer() { Context->OMSetDepthStencilState(noDepthBufferState.Get(), 0); }
 
 // --------------------------------------------------------
 // Called at the end of the program to clean up any

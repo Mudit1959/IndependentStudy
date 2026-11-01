@@ -9,6 +9,7 @@ float4 main(VertexToPixel input) : SV_TARGET
 {
     float c = input.uv.y;
     c *= 2;
-    c = (1 - abs(c - 1)) * input.smoothIntensity;
-    return float4(input.color.rgb, c);
+    c = smoothstep(0, 1, abs(c - 1)) / input.smoothIntensity;
+    return float4(input.color.rgb, 1-c);
+    
 }

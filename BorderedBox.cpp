@@ -3,7 +3,6 @@
 
 using namespace DirectX;
 
-const float blendFactor[4] = {0.0f,0.0f, 0.0f, 0.0f};
 const float PI = 3.14159265f;
 
 
@@ -331,15 +330,20 @@ void BorderedBox::LoadShaders()
 	// -- BLEND STATE -- 
 	{
 		D3D11_BLEND_DESC blendStateDesc = {};
-		blendStateDesc.AlphaToCoverageEnable = false;
 		blendStateDesc.IndependentBlendEnable = false;
+		blendStateDesc.AlphaToCoverageEnable = false;
+
 		blendStateDesc.RenderTarget[0].BlendEnable = true;
+		
 		blendStateDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
 		blendStateDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
-		blendStateDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
-		blendStateDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ONE;
+		
 		blendStateDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
 		blendStateDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+
+		blendStateDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+		blendStateDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ONE;
+
 		blendStateDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 		Graphics::Device->CreateBlendState(&blendStateDesc, blendState.GetAddressOf());
 	}
@@ -400,6 +404,8 @@ void BorderedBox::Draw(float deltaTime)
 			//  
 		}
 
+		
+
 		// -- SET TOPOLOGY --
 		{
 			// The kind of shapes we are drawing -> lines, triangles, interjoined strips, etc.
@@ -410,6 +416,8 @@ void BorderedBox::Draw(float deltaTime)
 		{
 			Graphics::Context->IASetInputLayout(inputLayout.Get());
 		}
+
+		
 
 		// -- SET SHADERS -- 
 		{
@@ -425,7 +433,6 @@ void BorderedBox::Draw(float deltaTime)
 
 				case SmoothLine:
 					Graphics::Context->PSSetShader(smoothLinePixelShader.Get(), 0, 0);
-					SetInvSmoothIntensity(2);
 					break;
 
 				case Circle:
@@ -469,9 +476,11 @@ void BorderedBox::Draw(float deltaTime)
 		}
 
 		// -- SET OUTPUT MERGER STATE / BLEND STATE --
+		// -- DISABLE DEPTH BUFFER --
 		{
-			
-			Graphics::Context->OMSetBlendState(blendState.Get(),blendFactor,0xffffff);
+
+			Graphics::DisableZBuffer();
+			Graphics::Context->OMSetBlendState(blendState.Get(), NULL, 0xffffff);
 		}
 		
 		// -- DRAW TRIANGLES BASED ON INDICES --

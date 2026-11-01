@@ -44,9 +44,18 @@ Game::Game()
 	renderBox->CreateGeometry();
 	renderBox->LoadShaders();
 
-	branch = new Branch(80, 80, 100, 50, 50);
-	branch->AddNode(40, -20);
+	branch = new Branch(80, 80, 70, 50, 50, 50);
+	branch->AddNode(50, -20, 25);
+	branch->AddNode(50, 50, 45);
+	branch->AddNode(50, -20, 45);
+	branch->AddNode(50, 50, 40);
+	branch->AddNode(50, -20, 30);
+	branch->AddNode(50, 50, 30);
+	branch->AddNode(50, -20, 30);
+	branch->AddNode(50, 50, 20);
 	
+	branch->AddNode(40, -20, 100); // Does not add false node!
+	//branch->PopNode();
 }
 
 void Game::ImGuiInitialize() 

@@ -166,7 +166,6 @@
   <ItemGroup>
     <ClCompile Include="BorderedBox.cpp" />
     <ClCompile Include="Branch.cpp" />
-    <ClCompile Include="Entity.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="Graphics.cpp" />
     <ClCompile Include="ImGui\imgui.cpp" />
@@ -186,7 +185,6 @@
     <ClInclude Include="BorderedBox.h" />
     <ClInclude Include="Branch.h" />
     <ClInclude Include="BufferStructs.h" />
-    <ClInclude Include="Entity.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="Graphics.h" />
     <ClInclude Include="ImGui\imconfig.h" />
