@@ -55,6 +55,8 @@ Game::Game()
 	branch->AddNode(50, 50, 20);
 	
 	branch->AddNode(40, -20, 100); // Does not add false node!
+	branch->ToggleEnable(false);
+	branch->SetDistCovered(500);
 	//branch->PopNode();
 }
 
@@ -164,7 +166,8 @@ void Game::Draw(float deltaTime, float totalTime)
 
 	// Frame DRAW
 	{
-		branch->Draw(deltaTime, renderBox);
+		branch->ChangeDistance(deltaTime*10);
+		branch->Draw(renderBox);
 	}
 
 	// Frame END

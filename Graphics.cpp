@@ -171,10 +171,10 @@ HRESULT Graphics::Initialize(unsigned int windowWidth, unsigned int windowHeight
 	ringBufferDesc.MiscFlags = 0;
 	ringBufferDesc.StructureByteStride = 0;
 
-	// Create buffer
+	// Create the constant buffer as one big heap -> hence, ConstBufferHeap
 	Device->CreateBuffer(&ringBufferDesc, 0, ConstBufferHeap.GetAddressOf());
 
-	// -- DISABLE Z BUFFER -- 
+	// -- DISABLE Z BUFFER STATE -- 
 	D3D11_DEPTH_STENCIL_DESC depthStencilDesc = {};
 	depthStencilDesc.DepthEnable = false;
 	depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
@@ -193,7 +193,7 @@ HRESULT Graphics::Initialize(unsigned int windowWidth, unsigned int windowHeight
 
 	Device->CreateDepthStencilState(&depthStencilDesc, noDepthBufferState.GetAddressOf());
 
-	// -- ENABLE Z BUFFER --
+	// -- ENABLE Z BUFFER STATE--
 	depthStencilDesc.DepthEnable = true;
 
 	Device->CreateDepthStencilState(&depthStencilDesc, defaultDepthState.GetAddressOf());
@@ -269,16 +269,19 @@ void Graphics::ResizeBuffers(unsigned int width, unsigned int height)
 		BackBufferRTV.GetAddressOf());
 
 	// Set up the description of the texture to use for the depth buffer
+	// Note that the depth buffer and stencil buffer share the same texture
+	// Each pixel's data is partitioned differently, as defined by the Format parameter.
+	// In this case, the stencil buffer is 8 bits long -> possible values from 0 to 255
 	D3D11_TEXTURE2D_DESC depthStencilDesc = {};
-	depthStencilDesc.Width = width;
-	depthStencilDesc.Height = height;
-	depthStencilDesc.MipLevels = 1;
-	depthStencilDesc.ArraySize = 1;
-	depthStencilDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	depthStencilDesc.Usage = D3D11_USAGE_DEFAULT;
-	depthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-	depthStencilDesc.CPUAccessFlags = 0;
-	depthStencilDesc.MiscFlags = 0;
+	depthStencilDesc.Width = width; // width of the screen
+	depthStencilDesc.Height = height; // height of the screen
+	depthStencilDesc.MipLevels = 1; // Mipmaps halve the size of the image at each level -> we do not want that here, as this is the depth buffer for the entire screen!
+	depthStencilDesc.ArraySize = 1; // number of textures in the texture array -> all data for the depth buffer is stored in one array
+	depthStencilDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT; // 32 bits in total -> 24 for depth, 8 for stencil
+	depthStencilDesc.Usage = D3D11_USAGE_DEFAULT; 
+	depthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL; // Bind this buffer as the depth stencil view
+	depthStencilDesc.CPUAccessFlags = 0; // Not to be touched by the CPU
+	depthStencilDesc.MiscFlags = 0; 
 	depthStencilDesc.SampleDesc.Count = 1;
 	depthStencilDesc.SampleDesc.Quality = 0;
 

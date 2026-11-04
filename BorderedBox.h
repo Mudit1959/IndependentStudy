@@ -49,7 +49,6 @@ private:
 
 	int vertexCount, indexCount, smoothVertCount, smoothIndexCount;
 	float angle;
-	
 	BoxData data;
 
 	// We use ComPtr because they are smart pointers, that is, they clean up after themselves. 
@@ -66,7 +65,8 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11Buffer> indexBuffer;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> smoothLineVertexBuffer;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> smoothLineIndexBuffer;
-	Microsoft::WRL::ComPtr<ID3D11Buffer> constantBuffer;
+
+	//Microsoft::WRL::ComPtr<ID3D11Buffer> constantBuffer;
 
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout;
 	Microsoft::WRL::ComPtr<ID3D11BlendState> blendState;

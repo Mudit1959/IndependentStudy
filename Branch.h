@@ -14,7 +14,12 @@ public:
 	void RemoveDistance(float deltaTime);
 	void PopNode();
 	void CalculateDistance(int index);
-	void Draw(float deltaTime, BorderedBox* renderBox);
+	void DrawAll(BorderedBox* renderBox);
+	void Draw(BorderedBox* renderBox);
+	void ChangeDistance(float deltaTime);
+	void SetDistCovered(float d);
+	void ClampDistance();
+	inline void ToggleEnable(bool e) { enabled = e; }
 	~Branch();
 
 private:
@@ -23,6 +28,7 @@ private:
 	// I want a way to track all the X and Y positions of each node, with a maximum of 10 nodes
 	// The start node can be of any size, the end node must be of size 10 -> could change this.
 	
+	bool enabled;
 
 	float relativeDistances[maxNodes - 1]; // The lines in between the nodes are always 1 less in number than the total node count
 	float angles[maxNodes - 1];
@@ -30,6 +36,7 @@ private:
 	DirectX::XMFLOAT2 nodesRelativeXY[maxNodes];
 	float nodesDiameter[maxNodes];
 	DirectX::XMFLOAT2 wholeOffset; 
+	const float lineThickness = 3;
 
 	int nodeCount; // Keep track of the nodes made
 	float distCovered; 

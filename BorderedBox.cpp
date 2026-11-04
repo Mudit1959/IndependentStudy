@@ -161,8 +161,8 @@ void BorderedBox::CreateGeometry()
 		Graphics::Device->CreateBuffer(&ibd, &initialIndexData, indexBuffer.GetAddressOf());
 	}
 
-	// -- CONSTANT BUFFER --
-	{
+	// -- OLD CONSTANT BUFFER WITHOUT RING BUFFER--
+	{ /*
 		D3D11_BUFFER_DESC cbd = {};
 		cbd.Usage = D3D11_USAGE_DYNAMIC;
 		cbd.ByteWidth = ((sizeof(BoxData) + 15) / 16) * 16;
@@ -170,7 +170,9 @@ void BorderedBox::CreateGeometry()
 		cbd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
 		Graphics::Device->CreateBuffer(&cbd, 0, constantBuffer.GetAddressOf());
+		*/
 	}
+	
 
 	// -- SMOOTH LINE --
 	{
@@ -465,14 +467,16 @@ void BorderedBox::Draw(float deltaTime)
 
 		// -- WRITE TO AND BIND CONSTANT BUFFER --
 		{
-			// Writing data to buffer
-			D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
-			Graphics::Context->Map(constantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
-			memcpy(mappedBuffer.pData, &data, sizeof(BoxData));
-			Graphics::Context->Unmap(constantBuffer.Get(), 0);
+			// Writing data to buffer -> OLD 
+			// D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
+			// Graphics::Context->Map(constantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
+			// memcpy(mappedBuffer.pData, &data, sizeof(BoxData));
+			// Graphics::Context->Unmap(constantBuffer.Get(), 0);
 
-			// Binding buffer
-			Graphics::Context->VSSetConstantBuffers(0, 1, constantBuffer.GetAddressOf());
+			// Binding buffer -> OLD
+			// Graphics::Context->VSSetConstantBuffers(0, 1, constantBuffer.GetAddressOf());
+
+			Graphics::FillAndBindNextConstantBuffer(&data, sizeof(BoxData), D3D11_VERTEX_SHADER, 0);
 		}
 
 		// -- SET OUTPUT MERGER STATE / BLEND STATE --
