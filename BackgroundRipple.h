@@ -5,6 +5,7 @@
 
 #include "Input.h"
 #include "Vertex.h" // To define vertices
+#include "Window.h" // To fetch screen size
 #include "Graphics.h" // For everything -> resource creation, binding and drawing
 
 // Needed for a helper function to load pre-compiled shader files
@@ -17,31 +18,38 @@
 class BackgroundRipple
 {
 public:
-	BackgroundRipple(int width, int height);
+	BackgroundRipple(float width, float height);
 	void CreateGeometry();
 	void LoadShaders();
 	void LoadTextures();
+	void LoadSampler();
 	void Update(); // check for mouse press here
 	void Draw();
 
 private:
-	int screenWidth, screenHeight;
-	float mouseX, mouseY;
+	float width, height;
+	int frameX, frameY;
+	unsigned char* rippleColor;
 	bool mousePressed;
 
-	UINT* previousData;
-	UINT* currentData;
+	unsigned char* previousData;
+	unsigned char* currentData;
+	bool isCurrent;
+	RippleData constData;
 	
-	D3D11_TEXTURE2D_DESC textureDesc;
 	Microsoft::WRL::ComPtr<ID3D11Texture2D> previous; 
 	Microsoft::WRL::ComPtr<ID3D11Texture2D> current;
 	
 
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> previousSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> currentSRV;
+
+	Microsoft::WRL::ComPtr<ID3D11SamplerState> samplerState;
+
 	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> previousRTV;
 	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> currentRTV;
 
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> previousSRV; 
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> currentSRV;
+	
 
 	Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> indexBuffer;

@@ -26,3 +26,10 @@ struct BoxData
 	float inverseSmoothIntensity; // 0 to 20 -> closer to 20, the sharper the to and bottom edges of the box are.
 };
 
+struct RippleData 
+{
+	DirectX::XMFLOAT2 screenSize;
+	DirectX::XMFLOAT2 backgroundSize;
+
+};
+

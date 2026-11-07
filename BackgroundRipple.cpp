@@ -2,21 +2,21 @@
 
 using namespace DirectX;
 
-BackgroundRipple::BackgroundRipple(int width, int height) 
+BackgroundRipple::BackgroundRipple(float w, float h)
 {
-	screenWidth = width;
-	screenHeight = height;
+	
+	width = w;
+	height = h;
 
-	previousData = new UINT[width * height * 4];
-	currentData = new UINT[width * height * 4];
+	constData.backgroundSize = DirectX::XMFLOAT2(w, h);
 
 	pixelShaderPath = L"ripplePixelShader.cso"; // Path to Pixel Shader
-	vertexShaderPath = L"VertexShaderRipple.cso"; // Path to Vertex Shader
+	vertexShaderPath = L"rippleVertexShader.cso"; // Path to Vertex Shader
 
 	CreateGeometry();
 	LoadShaders();
 	LoadTextures();
-
+	LoadSampler();
 }
 
 void BackgroundRipple::CreateGeometry() 
@@ -42,10 +42,10 @@ void BackgroundRipple::CreateGeometry()
 
 	Vertex vertices[] =
 	{
-		{ XMFLOAT3(-1.0f, 1.0f, +0.0f), XMFLOAT2(0, 0)},
-		{ XMFLOAT3(+1.0f, 1.0f, +0.0f), XMFLOAT2(1, 0) },
+		{ XMFLOAT3(0.0f, 0.0f, +0.0f), XMFLOAT2(0, 0)},
+		{ XMFLOAT3(+1.0f, 0.0f, +0.0f), XMFLOAT2(1, 0) },
 		{ XMFLOAT3(+1.0f, -1.0f, +0.0f), XMFLOAT2(1, 1) },
-		{ XMFLOAT3(-1.0f, -1.0f, +0.0f), XMFLOAT2(0, 1)}
+		{ XMFLOAT3(0.0f, -1.0f, +0.0f), XMFLOAT2(0, 1)}
 	};
 
 	// -- INDICES ARRAY --
@@ -97,8 +97,6 @@ void BackgroundRipple::CreateGeometry()
 		// 3) Asking the GPU to create this resource via the API. 
 		Graphics::Device->CreateBuffer(&ibd, &initialIndexData, indexBuffer.GetAddressOf());
 	}
-
-
 }
 
 void BackgroundRipple::LoadShaders() 
@@ -187,5 +185,219 @@ void BackgroundRipple::LoadTextures()
 {
 	// The pixel shader will be sampling 2 textures. 
 	// The 2 textures hold the values of the last two frames. 
-	// Frame 1 -> Stored in Previous -> Ripple create
+	
+	// We are creating our own textures. These textures must occupy a fixed space on screen.
+	// I want these textures to be of the same resolution as their space on screen before I decide to downscale/upscale. 
+	// Every texture requires a description to be created. 
+
+	D3D11_TEXTURE2D_DESC td = {};
+	td.Width = width;
+	td.Height = height;
+	td.MipLevels = 1; // How many times are we halving this texture to create different resolutions to sample from? -> In this case, we do not want any lower levels of sampling. 
+	td.ArraySize = 1; // Only more than 1 if we are creating a Texture2D array! -> Do not confuse this with the pixels holding 4 float values for color 
+	td.BindFlags = D3D11_BIND_SHADER_RESOURCE; // I want to sample this in a shader, hence shader resource.
+	td.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE; // I want to be able to edit the texture when the mouse is being pressed. -> Writing data to a specific position
+	td.MiscFlags = 0; // No miscellaneous information to give.
+	td.Usage = D3D11_USAGE_DEFAULT; // I want to be able to edit the texture when the mouse is being pressed. -> Writing data to a specific position
+	td.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // UNORM means unsigned normalized integers -> normalized means 0-255 becomes a 0-1 value, however the value we provide is from 0-255
+	td.SampleDesc.Count = 1; // Number of multi-samples per pixel
+	td.SampleDesc.Quality = 0; // The higher the quality level, the worse the performance
+
+
+	// -- CREATE TEXTURE DATA : CPU SIDE --
+
+	// Every pixel will hold 4 colour values, with each colour value being 8 bits long. 
+	// 1 unsigned char -> 8 bits (1 byte)
+	// 4 color values -> 4 unsigned char
+
+	int size = width * height; // total number of pixels
+	previousData = new unsigned char[size*4]; // multiplied by 4 for rgba color channels
+	currentData = new unsigned char[size*4];
+	float colorVal;
+	int index;
+	for (int i = 0; i < height; i++) 
+	{
+		for (int j = 0; j < width; j++) 
+		{
+			index = i * 4 * width;
+			index += j * 4;
+			colorVal = (j / (float)width) * 255;
+			previousData[index] = (unsigned char)colorVal;
+			previousData[index + 1] = (unsigned char)0.0;
+			previousData[index + 2] = (unsigned char)0.0f;
+			previousData[index + 3] = (unsigned char)255.0f;
+
+			currentData[index] = (unsigned char)colorVal;
+			currentData[index + 1] = (unsigned char)0.0f;
+			currentData[index + 2] = (unsigned char)0.0f;
+			currentData[index + 3] = (unsigned char)255.0f;
+		}
+	}
+
+	// -- CREATE TEXTURE BUFFERS -- 
+	
+	// We want to feed in this initial data to initialize the buffer
+	D3D11_SUBRESOURCE_DATA preLoadData = {};// Create a SUBRESOURCE_DATA object. 
+	preLoadData.pSysMem = previousData; // What structure is holding the data to be loaded?
+	preLoadData.SysMemPitch = sizeof(unsigned char) * 4 * width; // Since textures are to be read in two dimensions, what is the size of one row?
+	Graphics::Device->CreateTexture2D(&td, &preLoadData, previous.GetAddressOf());
+
+	// Change the pointer to the data structure before creating the "current" texture buffer
+	preLoadData.pSysMem = currentData;
+	Graphics::Device->CreateTexture2D(&td, &preLoadData, current.GetAddressOf());
+
+	// Now we can delete the data structures on the CPU side
+	//delete[] previousData;
+	delete[] currentData;
+	//previousData = nullptr;
+	currentData = nullptr;
+	
+
+	// Great! The texture data is now stored as a buffer on the GPU, and the CPU side has been cleaned out.
+	// However, the shaders will still not access the texture buffers directly. 
+	
+	// To provide more security and control, shaders need to be explicitly told 
+	// 1) the number of mipmap levels they can access
+	// 2) the number of array elements (in the case of a texture array) they can access
+	// This is done by a SHADER RESOURCE VIEW -> How am I supposed to view this shader resource?
+
+	// -- CREATE SHADER RESOURCE VIEWS (SRV) -- 
+	
+	// In most cases, the entire resource should be accessed
+	// This is also the default state of a SRV description.
+	// Thus, we can pass 0 or NULL for the SRV description pointer.
+
+	Graphics::Device->CreateShaderResourceView(previous.Get(), NULL, previousSRV.GetAddressOf());
+
+	// Note, every resource must have its own shader resource view.
+	// These cannot be shared, because even though two buffers (say textures) have the same structure, 
+	// THEY DO NOT HOLD THE SAME DATA. 
+
+	Graphics::Device->CreateShaderResourceView(current.Get(), NULL, currentSRV.GetAddressOf());
+
+	// -- BOOLEAN FOR SWAPPING BUFFERS --
+	// -- COLOR OF RIPPLE --
+	isCurrent = true;
+	rippleColor = new unsigned char[4];
+	for (int i = 0; i < 4;i++) 
+	{
+		rippleColor[i] = (unsigned char)255.0f;
+	}
+}
+
+void BackgroundRipple::LoadSampler() 
+{
+	// great! 
+	// The textures have been created (stored as Texture2D buffers on the GPU)
+	// The instructions for the shaders for accessing the buffers are also stored on the GPU (as SRVs)
+	
+	// Now, the instructions for loading a color of a pixel from a texture must be defined -> this is known as sampling
+	// Sampling is performed using UV coordinates
+	// In HLSL, UV of top left is 0,0 -> UV of bottom right is 1,1
+	// UV coordinates -> the opposite corner of 0,0 is 1,1
+	
+	// There are two main criteria for sampling
+	// 1) Address mode : What should the shader do if the UV value of a pixel is outside the 0 - 1 UV range?
+	// 2) Filter : What should the shader do if the UV value falls right between two pixels?
+
+	// Three kinds of filters : Point filtering, linear filtering, anisotropic filtering
+	// Three stages of filtering : Minification, Magnification, Mipmap reference
+	// Address modes : Border, Clamp, Wrap, Mirror, Mirror Once
+	
+	D3D11_SAMPLER_DESC samplerDesc = {};
+	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
+	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
+	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
+	samplerDesc.BorderColor[3] = 0.0f; // Setting alpha of the border color to 0
+	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+	Graphics::Device->CreateSamplerState(&samplerDesc, samplerState.GetAddressOf());
+}
+
+void BackgroundRipple::Update() 
+{
+	frameX = Input::GetMouseX();
+	frameY = Input::GetMouseY();
+	if (Input::MouseLeftPress() && frameX > 1 && frameX < width - 1 && frameY > 1 && frameY < height - 1)
+	{
+		frameX--;
+		frameY--;
+		printf("Pressed\n");
+		printf("%i\n", frameX);
+		printf("%i\n", frameY);
+
+		
+
+		D3D11_BOX box = {};
+		box.back = 1;
+		box.front = 0;
+		box.left = frameX;
+		box.right = box.left+1;
+		box.top = frameY;
+		box.bottom = box.top+1;
+
+		
+		Graphics::Context->UpdateSubresource(previous.Get(), 0, &box, &rippleColor[0], 4 * sizeof(unsigned char) * width, height * 4 * sizeof(unsigned char) * width);
+		
+	}
+}
+
+void BackgroundRipple::Draw() 
+{
+	// -- SET TOPOLOGY --
+	{
+		// The kind of shapes we are drawing -> lines, triangles, interjoined strips, etc.
+		Graphics::Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	}
+
+	// -- SET INPUT LAYOUT -- 
+	{
+		Graphics::Context->IASetInputLayout(inputLayout.Get());
+	}
+
+	// -- SET SHADERS -- 
+	{
+		Graphics::Context->VSSetShader(vertexShader.Get(), 0, 0);
+		Graphics::Context->PSSetShader(pixelShader.Get(), 0, 0);
+	}
+
+	// -- BIND VERTEX AND INDEX BUFFERS --
+	{
+		UINT stride = sizeof(Vertex); // How big is one vertex of this particular object?
+		UINT offset = 0; // Start from the beginning or some bytes after?
+
+		Graphics::Context->IASetVertexBuffers(0, 1, vertexBuffer.GetAddressOf(), &stride, &offset);
+		Graphics::Context->IASetIndexBuffer(indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+	}
+
+	// -- WRITE TO AND BIND CONSTANT BUFFER --
+	{
+		// Binding buffer -> OLD
+		// Graphics::Context->VSSetConstantBuffers(0, 1, constantBuffer.GetAddressOf());
+		constData.screenSize.x = Window::Width();
+		constData.screenSize.y = Window::Height();
+		
+		Graphics::FillAndBindNextConstantBuffer(&constData, sizeof(RippleData), D3D11_VERTEX_SHADER, 0);
+	}
+
+	// -- SET SHADER RESOURCES & SAMPLER STATE--
+	{
+		Graphics::Context->PSSetShaderResources(0, 1, previousSRV.GetAddressOf());
+		Graphics::Context->PSSetSamplers(0, 1, samplerState.GetAddressOf());
+	}
+
+	
+	// -- DISABLE DEPTH BUFFER --
+	// -- SET OUTPUT MERGER STATE / BLEND STATE --
+	{
+		Graphics::DisableZBuffer();
+		Graphics::Context->OMSetBlendState(blendState.Get(), NULL, 0xffffff);
+	}
+
+	// -- DRAW TRIANGLES BASED ON INDICES --
+	Graphics::Context->DrawIndexed(indexCount, 0, 0);
+
+	// -- RE-ENABLE Z-BUFFER --
+	Graphics::EnableZBuffer();
 }

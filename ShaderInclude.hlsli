@@ -32,3 +32,5 @@ struct VertexToPixel
     float smoothIntensity : SMOOTHING; // How close to the edge should blending be?
 };
 
+
+

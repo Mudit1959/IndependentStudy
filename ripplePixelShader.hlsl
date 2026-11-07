@@ -1,4 +1,9 @@
-float4 main() : SV_TARGET
+#include "ShaderInclude.hlsli"
+
+Texture2D buffer : register(t0);
+SamplerState thisSampler : register(s0);
+
+float4 main(VertexToPixel input) : SV_TARGET
 {
-	return float4(1.0f, 1.0f, 1.0f, 1.0f);
+    return buffer.Sample(thisSampler, input.uv).rgba;
 }

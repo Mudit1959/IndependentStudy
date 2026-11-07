@@ -13,7 +13,7 @@ BorderedBox::BorderedBox()
 	indexCount = 6; 
 	SetKind(); // By default, the box 
 	pixelShaderPath = L"PixelShader.cso"; // Path to Pixel Shader
-	vertexShaderPath = L"VertexShaderBox.cso"; // Path to Vertex Shader
+	vertexShaderPath = L"boxVertexShader.cso"; // Path to Vertex Shader
 	circlePSPath = L"circlePixelShader.cso"; // Path to circle shader
 	smoothLinePSPath = L"smoothLinePixelShader.cso"; // Path to smooth line shader
 
@@ -409,7 +409,8 @@ void BorderedBox::Draw(float deltaTime)
 			// An API state object known as a Rasterizer State Object, holds some of these settings
 			// An API state object is a resource too! Necessary for rendering data. Thus, it follows the same flow as RESOURCE CREATION
 			// Minimum non-zero values for a Rasterizer State Description needed are: cull mode(what to ignore), fill mode(wireframe, solid, etc.), depth buffer (depth clip enable)
-			//  
+			
+			// The Blend state for the output merger has been created and defined already, we simply need to set it. 
 		}
 
 		
@@ -425,12 +426,8 @@ void BorderedBox::Draw(float deltaTime)
 			Graphics::Context->IASetInputLayout(inputLayout.Get());
 		}
 
-		
-
 		// -- SET SHADERS -- 
 		{
-			data.screenSize.x = Window::Width();
-			data.screenSize.y = Window::Height();
 			
 			Graphics::Context->VSSetShader(vertexShader.Get(), 0, 0);
 			switch (kind) 
@@ -481,7 +478,8 @@ void BorderedBox::Draw(float deltaTime)
 
 			// Binding buffer -> OLD
 			// Graphics::Context->VSSetConstantBuffers(0, 1, constantBuffer.GetAddressOf());
-
+			data.screenSize.x = Window::Width();
+			data.screenSize.y = Window::Height();
 			Graphics::FillAndBindNextConstantBuffer(&data, sizeof(BoxData), D3D11_VERTEX_SHADER, 0);
 		}
 

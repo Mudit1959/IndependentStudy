@@ -127,7 +127,7 @@
     <FxCompile Include="PixelShader.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="VertexShaderBox.hlsl">
+    <FxCompile Include="boxVertexShader.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="smoothLinePixelShader.hlsl">
@@ -136,7 +136,7 @@
     <FxCompile Include="circlePixelShader.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="VertexShaderRipple.hlsl">
+    <FxCompile Include="rippleVertexShader.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="ripplePixelShader.hlsl">

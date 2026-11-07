@@ -6,6 +6,7 @@
 #include "Window.h"
 
 #include "BorderedBox.h"
+#include "BackgroundRipple.h"
 #include "Branch.h"
 
 // ImGui header files
@@ -24,6 +25,7 @@ using namespace DirectX;
 
 Branch* branch;
 BorderedBox* renderBox;
+BackgroundRipple* ripplesBG;
 
 float whxy[4];
 float objColor[4] = {255, 0, 0, 100};
@@ -41,6 +43,7 @@ Game::Game()
 	whxy[2] = 100;
 	whxy[3] = 50;
 	renderBox = new BorderedBox(); // ready to use
+	ripplesBG = new BackgroundRipple(600.0f, 600.0f);
 
 	branch = new Branch(80, 80, 70, 50, 50, 50);
 	branch->AddNode(50, -20, 25);
@@ -120,6 +123,7 @@ Game::~Game()
 	// Clean Up BorderedBox object
 	delete branch;
 	delete renderBox;
+	delete ripplesBG;
 	
 }
 
@@ -139,6 +143,8 @@ void Game::OnResize()
 void Game::Update(float deltaTime, float totalTime)
 {
 	Game::ImGuiUpdate(deltaTime);
+
+	ripplesBG->Update();
 
 	// Example input checking: Quit if the escape key is pressed
 	if (Input::KeyDown(VK_ESCAPE))
@@ -164,13 +170,11 @@ void Game::Draw(float deltaTime, float totalTime)
 
 	// Frame DRAW
 	{
+		ripplesBG->Draw();
+
 		// -- BRANCHES --
 		//branch->ChangeDistance(deltaTime*30);
 		//branch->Draw(renderBox);
-
-
-
-
 	}
 
 	// Frame END
