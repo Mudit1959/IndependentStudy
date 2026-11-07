@@ -25,3 +25,4 @@ struct BoxData
 	DirectX::XMFLOAT3 color; // -> from 0 to 255
 	float inverseSmoothIntensity; // 0 to 20 -> closer to 20, the sharper the to and bottom edges of the box are.
 };
+

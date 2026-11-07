@@ -26,8 +26,6 @@ namespace Graphics
 	// Rendering buffers
 	inline Microsoft::WRL::ComPtr<ID3D11RenderTargetView> BackBufferRTV;
 	inline Microsoft::WRL::ComPtr<ID3D11DepthStencilView> DepthBufferDSV;
-	inline Microsoft::WRL::ComPtr<ID3D11RenderTargetView> RippleBuffer1RTV;
-	inline Microsoft::WRL::ComPtr<ID3D11RenderTargetView> RippleBuffer2RTV;
 
 	// -- No Z Buffer --
 	void DisableZBuffer();

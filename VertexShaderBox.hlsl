@@ -41,7 +41,8 @@ VertexToPixel main( VertexShaderInput input )
     
 	// Scaling needs to take place in two stages. 
 	// The first is to scale the box according to the final pixel length and height we want. 
-	// Note that the vertices provided in the vertex shader must all have a magnitude of 1, otherwise, this will not work as intended!
+	// Note that the vertices provided to the vertex shader must all have their coordinates and their uvs
+	// to be scaled to a unit square. Otherwise, this will not work.
 	
 	// Since I am doing the matrix math manually, it is very important to store the X and Y in their own variables before rotation is applied!
 	// Otherwise there will be all kinds of weird skewing - costed me 4 hours one day, and I figured it out on the bus back!
@@ -79,7 +80,8 @@ VertexToPixel main( VertexShaderInput input )
 	//   a perspective projection matrix, which we'll get to in the future).
 	
 	// In this case, since everything is 2D, I do not care about the z or w values. 
-	// Still good to pass them. Maybe based on the z values, I can differentiate between UI elements
+	// Note the z buffer is disabled during the rendering of 2D objects. 
+	// There must be a different way to differentiate between UI elements.
 	
 	output.screenPosition = finalPos;
     

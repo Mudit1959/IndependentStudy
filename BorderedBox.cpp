@@ -17,6 +17,9 @@ BorderedBox::BorderedBox()
 	circlePSPath = L"circlePixelShader.cso"; // Path to circle shader
 	smoothLinePSPath = L"smoothLinePixelShader.cso"; // Path to smooth line shader
 
+	CreateGeometry();
+	LoadShaders();
+
 }
 
 void BorderedBox::SetKind(Kind k)
@@ -331,6 +334,9 @@ void BorderedBox::LoadShaders()
 
 	// -- BLEND STATE -- 
 	{
+		// REMEMBER - For this blend state to take proper effect, the Z BUFFER MUST BE DISABLED!!!
+		// This is done through the Graphics helper functions EnableZBuffer and DisableZBuffer
+
 		D3D11_BLEND_DESC blendStateDesc = {};
 		blendStateDesc.IndependentBlendEnable = false;
 		blendStateDesc.AlphaToCoverageEnable = false;
@@ -498,6 +504,9 @@ void BorderedBox::Draw(float deltaTime)
 				Graphics::Context->DrawIndexed(indexCount,0,0);
 				break;
 		}
+
+		// -- RE-ENABLE Z-BUFFER --
+		Graphics::EnableZBuffer();
 		
 	}
 }

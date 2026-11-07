@@ -40,9 +40,7 @@ Game::Game()
 	whxy[1] = 50;
 	whxy[2] = 100;
 	whxy[3] = 50;
-	renderBox = new BorderedBox();
-	renderBox->CreateGeometry();
-	renderBox->LoadShaders();
+	renderBox = new BorderedBox(); // ready to use
 
 	branch = new Branch(80, 80, 70, 50, 50, 50);
 	branch->AddNode(50, -20, 25);
@@ -166,8 +164,13 @@ void Game::Draw(float deltaTime, float totalTime)
 
 	// Frame DRAW
 	{
-		branch->ChangeDistance(deltaTime*10);
-		branch->Draw(renderBox);
+		// -- BRANCHES --
+		//branch->ChangeDistance(deltaTime*30);
+		//branch->Draw(renderBox);
+
+
+
+
 	}
 
 	// Frame END
