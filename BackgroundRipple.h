@@ -24,12 +24,13 @@ public:
 	void LoadTextures();
 	void LoadSampler();
 	void Update(); // check for mouse press here
+	void UpdateBuffers(); // run ripple algorithm here
 	void Draw();
 
 private:
 	float width, height;
 	int frameX, frameY;
-	unsigned char* rippleColor;
+	unsigned char* alphaVals;
 	bool mousePressed;
 
 	unsigned char* previousData;
@@ -61,12 +62,13 @@ private:
 	ID3DBlob* vertexShaderBlob;
 	ID3DBlob* pixelShaderBlob;
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader;
-	Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShader;
-
+	Microsoft::WRL::ComPtr<ID3D11PixelShader> displayPixelShader;
+	Microsoft::WRL::ComPtr<ID3D11PixelShader> calcPixelShader;
 	
 
 	std::wstring vertexShaderPath;
-	std::wstring pixelShaderPath;
+	std::wstring displayPixelShaderPath;
+	std::wstring calcPixelShaderPath;
 
 	int vertexCount, indexCount;
 };
