@@ -30,22 +30,23 @@ public:
 private:
 	float width, height;
 	int frameX, frameY;
-	unsigned char* alphaVals;
+	float* alphaVals;
 	bool mousePressed;
 	float timePassed;
 
-	unsigned char* previousData;
-	unsigned char* currentData;
+	float* previousData;
+	float* currentData;
 	bool isCurrent;
 	RippleData constData;
 	
 	Microsoft::WRL::ComPtr<ID3D11Texture2D> previous; 
 	Microsoft::WRL::ComPtr<ID3D11Texture2D> current;
-	Microsoft::WRL::ComPtr<ID3D11Texture2D> rippleClick;
+	
 	
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> previousSRV;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> currentSRV;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> rippleClickSRV;
+	
+	ID3D11UnorderedAccessView* v1[3];
 
 	Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> previousUAV;
 	Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> currentUAV;

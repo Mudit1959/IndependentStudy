@@ -36,8 +36,11 @@ struct VertexToPixel
 struct RippleVertexToPixel
 {
     float4 screenPosition : SV_POSITION; // XYZW position (System Value Position)
+    
     float2 uv : UVCOORD; // UV coordinates -> 0, 1
     int2 backgroundSize : BACKGROUND_SIZE; // Dimensions of buffer for the pixel shader 
+    
+    float3 color : COLOR;
 };
 
 

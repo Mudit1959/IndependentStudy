@@ -1,38 +1,34 @@
 #include "ShaderInclude.hlsli"
 
-Texture2D prevFrame : register(t0);
-RWTexture2D<float4> nextFrame : register(u2);
+RWTexture2D<float> prevFrame : register(u2);
+RWTexture2D<float> nextFrame : register(u3);
 SamplerState thisSampler : register(s0);
 
 void main(RippleVertexToPixel input)
 {
     float2 uv = input.uv;
     int2 backgroundSize = input.backgroundSize;
+    float value = 0;
     
-    /*
-    float xIncrement = 1.0f / (float) backgroundSize.x;
-    float yIncrement = 1.0f / (float) backgroundSize.y;
+    int2 index = int2(floor(uv.x * (backgroundSize.x - 1)), floor(uv.y * (backgroundSize.y - 1)));
+    index.x = clamp(index.x, 1, backgroundSize.x-2);
+    index.y = clamp(index.y, 1, backgroundSize.y - 2);
     
-    float2 left = uv - float2(xIncrement, 0);
-    float2 right = uv + float2(xIncrement, 0);
-    float2 up = uv + float2(0, yIncrement);
-    float2 down = uv - float2(0, yIncrement);
-    */
+    int2 right,left, up, down;
     
-    int2 index = int2(floor(uv.x * backgroundSize.x - 1), floor(uv.y * backgroundSize.y - 1));
-    if (index.x < 1 || index.y < 1 || uv.y > 0.999 || uv.x > 0.999)
-    {
-        nextFrame[index] = float4(1, 1, 1, 1);
-    }
-    else
-    {
-        nextFrame[index] = prevFrame[index];
-    }
+    right = left = up = down = index;
    
+    right.x += 1;
+    left.x -= 1;
+    up.y += 1;
+    down.y -= 1;
+    
+    value = prevFrame[left] + prevFrame[right] + prevFrame[up] + prevFrame[down];
+    value /= 2.0f;
+    
+    nextFrame[index] = max(value * 0.84, 0);
     
     
-    
-    // Indexing is from 0 - backgroundSize - 1
     
     
 }

@@ -4,6 +4,7 @@ cbuffer RippleData : register(b0)
 {
     float2 screenSize;
     float2 backgroundSize;
+    float3 color;
 }
 
 RippleVertexToPixel main(VertexShaderInput input)
@@ -39,6 +40,7 @@ RippleVertexToPixel main(VertexShaderInput input)
     output.screenPosition = finalPos;
     output.backgroundSize = (int2) backgroundSize;
     output.uv = input.uv;
+    output.color = color;
     
     return output;
 }

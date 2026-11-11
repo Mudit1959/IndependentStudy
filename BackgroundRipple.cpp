@@ -2,11 +2,18 @@
 
 using namespace DirectX;
 
+const int channelSize = 1;
+unsigned long long dataTypeSize = sizeof(float);
+
+
 BackgroundRipple::BackgroundRipple(float w, float h)
 {
 	
 	width = w;
 	height = h;
+	printf("%d",dataTypeSize);
+
+	
 
 	constData.backgroundSize = DirectX::XMFLOAT2(w, h);
 
@@ -198,6 +205,8 @@ void BackgroundRipple::LoadTextures()
 	// I want these textures to be of the same resolution as their space on screen before I decide to downscale/upscale. 
 	// Every texture requires a description to be created. 
 
+	// Trying a different method - store the alpha value and inverse alpha value of the ripple in the textures, and output to screen
+
 	D3D11_TEXTURE2D_DESC td = {};
 	td.Width = width;
 	td.Height = height;
@@ -207,7 +216,7 @@ void BackgroundRipple::LoadTextures()
 	td.CPUAccessFlags = 0; // I want to be able to edit the texture when the mouse is being pressed. -> Writing data to a specific position
 	td.MiscFlags = 0; // No miscellaneous information to give.
 	td.Usage = D3D11_USAGE_DEFAULT; // I want to be able to edit the texture when the mouse is being pressed. -> Writing data to a specific position
-	td.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // UNORM means unsigned normalized integers -> normalized means 0-255 becomes a 0-1 value, however the value we provide is from 0-255
+	td.Format = DXGI_FORMAT_R32_FLOAT; // UNORM means unsigned normalized integers -> normalized means 0-255 becomes a 0-1 value, however the value we provide is from 0-255
 	// To indicate no multi-sampling, SampleDesc.Count = 1 & SampleDesc.Quality = 0
 	td.SampleDesc.Count = 1; // Number of multi-samples per pixel
 	td.SampleDesc.Quality = 0; // The higher the quality level, the worse the performance
@@ -220,8 +229,8 @@ void BackgroundRipple::LoadTextures()
 	// 4 values for color -> 2 unsigned char
 
 	int size = width * height; // total number of pixels
-	previousData = new unsigned char[size * 4]; // multiplied by 4 for rgba color channels
-	currentData = new unsigned char[size * 4];
+	previousData = new float[size * channelSize]; // multiplied by 4 for rgba color channels
+	currentData = new float[size * channelSize];
 	float alphaVal;
 	int index;
 	for (int i = 0; i < height; i++) 
@@ -230,21 +239,22 @@ void BackgroundRipple::LoadTextures()
 		{
 			index = (i * width);
 			index += (j);
-			index *= 4;
-			alphaVal = (j / (float)width) * 255;
+			index *= channelSize;
 			// Set color 
 			// R
-			currentData[index] = (unsigned char)alphaVal;
-			previousData[index] = (unsigned char)0;
+			//currentData[index] = (unsigned char)alphaVal;
+			//previousData[index] = (unsigned char)0;
 			// G 
-			currentData[index + 1] = (unsigned char)0;
-			previousData[index + 1] = (unsigned char)0;
+			//currentData[index + 1] = (unsigned char)0;
+			//previousData[index + 1] = (unsigned char)0;
 			// B
-			currentData[index + 2] = (unsigned char)0;
-			previousData[index + 2] = (unsigned char)0;
+			//currentData[index + 2] = (unsigned char)0;
+			//previousData[index + 2] = (unsigned char)0;
+			
 			// A
-			currentData[index + 3] = (unsigned char)alphaVal;
-			previousData[index + 3] = (unsigned char)0;
+			currentData[index] = (float)0;
+			previousData[index] = (float)0;
+
 
 		}
 	}
@@ -254,7 +264,7 @@ void BackgroundRipple::LoadTextures()
 	// We want to feed in this initial data to initialize the buffer
 	D3D11_SUBRESOURCE_DATA preLoadData = {};// Create a SUBRESOURCE_DATA object. 
 	preLoadData.pSysMem = previousData; // What structure is holding the data to be loaded?
-	preLoadData.SysMemPitch = sizeof(unsigned char) * width * 4; // Since textures are to be read in two dimensions, what is the size of one row?
+	preLoadData.SysMemPitch = dataTypeSize * width * channelSize; // Since textures are to be read in two dimensions, what is the size of one row?
 	Graphics::Device->CreateTexture2D(&td, &preLoadData, previous.GetAddressOf());
 
 	// Change the pointer to the data structure before creating the "current" texture buffer
@@ -284,7 +294,7 @@ void BackgroundRipple::LoadTextures()
 	// However, I will specify a shader resource view here
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-	srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	srvDesc.Format = DXGI_FORMAT_R32_FLOAT;
 	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 	srvDesc.Texture2D.MipLevels = td.MipLevels;
 	srvDesc.Texture2D.MostDetailedMip = 0;
@@ -303,20 +313,22 @@ void BackgroundRipple::LoadTextures()
 	// However, the textures swap roles every frame, so a UAV must be created for each frame. 
 
 	D3D11_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
-	uavDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	uavDesc.Format = DXGI_FORMAT_R32_FLOAT;
 	uavDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
 	uavDesc.Texture2D.MipSlice = td.MipLevels - 1;
 	Graphics::Device->CreateUnorderedAccessView(previous.Get(), &uavDesc, previousUAV.GetAddressOf());
 	Graphics::Device->CreateUnorderedAccessView(current.Get(), &uavDesc, currentUAV.GetAddressOf());
 
+	v1[0] = previousUAV.Get(); 
+	v1[1] = currentUAV.Get();
+	v1[2] = previousUAV.Get();
+
 	// -- BOOLEAN FOR SWAPPING BUFFERS --
 	// -- COLOR OF RIPPLE --
 	isCurrent = true;
-	alphaVals = new unsigned char[4];
-	alphaVals[0] = 255.0f;
-	alphaVals[1] = 255.0f;
-	alphaVals[2] = 255.0f;
-	alphaVals[3] = 255.0f;
+	alphaVals = new float[1];
+	alphaVals[0] = (float)255.0f;
+	
 }
 
 void BackgroundRipple::LoadSampler() 
@@ -377,11 +389,11 @@ void BackgroundRipple::Update()
 		// https://eatplayhate.me/2013/09/29/d3d11-texture-update-costs/
 		if (isCurrent) 
 		{
-			Graphics::Context->UpdateSubresource(current.Get(), 0, &box, &alphaVals[0], 4 * sizeof(unsigned char) * width, height * 4 * sizeof(unsigned char) * width);
+			Graphics::Context->UpdateSubresource(current.Get(), 0, &box, &alphaVals[0], channelSize * dataTypeSize * width, height * channelSize * dataTypeSize * width);
 		}
 		else
 		{
-			Graphics::Context->UpdateSubresource(previous.Get(), 0, &box, &alphaVals[0], 4 * sizeof(unsigned char) * width, height * 4 * sizeof(unsigned char) * width);
+			Graphics::Context->UpdateSubresource(previous.Get(), 0, &box, &alphaVals[0], channelSize * dataTypeSize * width, height * channelSize * dataTypeSize * width);
 		}
 	}
 	
@@ -417,13 +429,13 @@ void BackgroundRipple::UpdateBuffers()
 	{
 		if (isCurrent)
 		{
-			Graphics::Context->PSSetShaderResources(0, 1, currentSRV.GetAddressOf());
-			Graphics::Context->OMSetRenderTargetsAndUnorderedAccessViews(0, NULL, Graphics::DepthBufferDSV.Get(), 2, 1, previousUAV.GetAddressOf(), NULL);
+			Graphics::Context->OMSetRenderTargetsAndUnorderedAccessViews(0, NULL, NULL, 2, 2, &v1[1], NULL);
+			
 		}
 		else
 		{
-			Graphics::Context->PSSetShaderResources(0, 1, previousSRV.GetAddressOf());
-			Graphics::Context->OMSetRenderTargetsAndUnorderedAccessViews(0, NULL, Graphics::DepthBufferDSV.Get(), 2, 1, currentUAV.GetAddressOf(), NULL);
+			Graphics::Context->OMSetRenderTargetsAndUnorderedAccessViews(0, NULL, NULL, 2, 2, &v1[0], NULL);
+			
 		}
 
 		Graphics::Context->PSSetSamplers(0, 1, samplerState.GetAddressOf());
@@ -444,7 +456,9 @@ void BackgroundRipple::UpdateBuffers()
 	// -- RE-ENABLE Z-BUFFER --
 	// -- RESET RENDER TARGET --
 	Graphics::EnableZBuffer();
-	Graphics::Context->OMSetRenderTargetsAndUnorderedAccessViews(1, Graphics::BackBufferRTV.GetAddressOf(), Graphics::DepthBufferDSV.Get(), 2, 0, NULL, NULL);
+	ID3D11UnorderedAccessView* nullUAV[2] = {nullptr, nullptr};
+	Graphics::Context->OMSetRenderTargetsAndUnorderedAccessViews(1, Graphics::BackBufferRTV.GetAddressOf(), Graphics::DepthBufferDSV.Get(), 2, 2, nullUAV, NULL);
+	
 }
 
 void BackgroundRipple::Draw(float deltaTime) 
@@ -482,12 +496,21 @@ void BackgroundRipple::Draw(float deltaTime)
 		constData.screenSize.x = Window::Width();
 		constData.screenSize.y = Window::Height();
 		
+		if (!isCurrent)
+		{
+			constData.color = DirectX::XMFLOAT3(255, 0, 0);
+		}
+		else
+		{
+			constData.color = DirectX::XMFLOAT3(0, 255, 0);
+		}
+		
 		Graphics::FillAndBindNextConstantBuffer(&constData, sizeof(RippleData), D3D11_VERTEX_SHADER, 0);
 	}
 
 	// -- SET SHADER RESOURCES & SAMPLER STATE--
 	{
-		if (isCurrent) 
+		if (!isCurrent) 
 		{
 			Graphics::Context->PSSetShaderResources(0, 1, currentSRV.GetAddressOf());
 		}
@@ -509,6 +532,9 @@ void BackgroundRipple::Draw(float deltaTime)
 
 	// -- DRAW TRIANGLES BASED ON INDICES --
 	Graphics::Context->DrawIndexed(indexCount, 0, 0);
+
+	ID3D11ShaderResourceView* unbindPS[1] = { nullptr };
+	Graphics::Context->PSSetShaderResources(0, 1, unbindPS);
 
 	// -- RE-ENABLE Z-BUFFER --
 	Graphics::EnableZBuffer();
