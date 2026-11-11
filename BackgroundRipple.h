@@ -23,7 +23,7 @@ public:
 	void LoadShaders();
 	void LoadTextures();
 	void LoadSampler();
-	void Update(); // check for mouse press here
+	void Update(float deltaTime); // check for mouse press here
 	void UpdateBuffers(); // run ripple algorithm here
 	void Draw(float deltaTime);
 
@@ -33,6 +33,7 @@ private:
 	float* alphaVals;
 	bool mousePressed;
 	float timePassed;
+	float frameLength = (1 / 60.0f);
 
 	float* previousData;
 	float* currentData;
@@ -47,6 +48,8 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> currentSRV;
 	
 	ID3D11UnorderedAccessView* v1[3];
+	ID3D11ShaderResourceView* unbindPS[1] = { nullptr };
+	
 
 	Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> previousUAV;
 	Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> currentUAV;

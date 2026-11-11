@@ -319,15 +319,15 @@ void BackgroundRipple::LoadTextures()
 	Graphics::Device->CreateUnorderedAccessView(previous.Get(), &uavDesc, previousUAV.GetAddressOf());
 	Graphics::Device->CreateUnorderedAccessView(current.Get(), &uavDesc, currentUAV.GetAddressOf());
 
-	v1[0] = previousUAV.Get(); 
-	v1[1] = currentUAV.Get();
-	v1[2] = previousUAV.Get();
+	v1[0] = currentUAV.Get();
+	v1[1] = previousUAV.Get();
+	v1[2] = currentUAV.Get();
 
 	// -- BOOLEAN FOR SWAPPING BUFFERS --
 	// -- COLOR OF RIPPLE --
 	isCurrent = true;
 	alphaVals = new float[1];
-	alphaVals[0] = (float)255.0f;
+	alphaVals[0] = (float)4500.0f;
 	
 }
 
@@ -363,9 +363,8 @@ void BackgroundRipple::LoadSampler()
 
 
 
-void BackgroundRipple::Update() 
+void BackgroundRipple::Update(float deltaTime) 
 {
-	
 	frameX = Input::GetMouseX();
 	frameY = Input::GetMouseY();
 	if (Input::MouseLeftPress() && frameX > 1 && frameX < width - 1 && frameY > 1 && frameY < height - 1)
@@ -396,14 +395,15 @@ void BackgroundRipple::Update()
 			Graphics::Context->UpdateSubresource(previous.Get(), 0, &box, &alphaVals[0], channelSize * dataTypeSize * width, height * channelSize * dataTypeSize * width);
 		}
 	}
-	
-	// I gained a 1000 FPS (800 -> 1800) simply by making sure I call the update buffer function once the first buffer has been rendered
-	// This way I simply switch my pixel shader and the resources I set, reducing the method length greatly. 
-	if (timePassed > 0) { UpdateBuffers(); }
+
+	// Update Ripple
+	UpdateBuffers();
 }
 
 void BackgroundRipple::UpdateBuffers()
 {
+	if (timePassed < frameLength) { return; }
+
 	// Want to run pixel shader for updating itself and its neighbours. 
 	// Drawing to a different render target. 
 
@@ -429,16 +429,14 @@ void BackgroundRipple::UpdateBuffers()
 	{
 		if (isCurrent)
 		{
-			Graphics::Context->OMSetRenderTargetsAndUnorderedAccessViews(0, NULL, NULL, 2, 2, &v1[1], NULL);
+			Graphics::Context->OMSetRenderTargetsAndUnorderedAccessViews(0, NULL, NULL, 1, 2, &v1[0], NULL);
 			
 		}
 		else
 		{
-			Graphics::Context->OMSetRenderTargetsAndUnorderedAccessViews(0, NULL, NULL, 2, 2, &v1[0], NULL);
+			Graphics::Context->OMSetRenderTargetsAndUnorderedAccessViews(0, NULL, NULL, 1, 2, &v1[1], NULL);
 			
 		}
-
-		Graphics::Context->PSSetSamplers(0, 1, samplerState.GetAddressOf());
 	}
 
 
@@ -451,18 +449,19 @@ void BackgroundRipple::UpdateBuffers()
 
 	// -- DRAW TRIANGLES BASED ON INDICES --
 	Graphics::Context->DrawIndexed(indexCount, 0, 0);
+	
 	isCurrent = !isCurrent;
+	timePassed = 0;
 
 	// -- RE-ENABLE Z-BUFFER --
 	// -- RESET RENDER TARGET --
 	Graphics::EnableZBuffer();
 	ID3D11UnorderedAccessView* nullUAV[2] = {nullptr, nullptr};
-	Graphics::Context->OMSetRenderTargetsAndUnorderedAccessViews(1, Graphics::BackBufferRTV.GetAddressOf(), Graphics::DepthBufferDSV.Get(), 2, 2, nullUAV, NULL);
-	
+	Graphics::Context->OMSetRenderTargetsAndUnorderedAccessViews(1, Graphics::BackBufferRTV.GetAddressOf(), Graphics::DepthBufferDSV.Get(), 1, 2, nullUAV, NULL);
 }
 
 void BackgroundRipple::Draw(float deltaTime) 
-{
+{	
 	// -- SET TOPOLOGY --
 	{
 		// The kind of shapes we are drawing -> lines, triangles, interjoined strips, etc.
@@ -496,15 +495,6 @@ void BackgroundRipple::Draw(float deltaTime)
 		constData.screenSize.x = Window::Width();
 		constData.screenSize.y = Window::Height();
 		
-		if (!isCurrent)
-		{
-			constData.color = DirectX::XMFLOAT3(255, 0, 0);
-		}
-		else
-		{
-			constData.color = DirectX::XMFLOAT3(0, 255, 0);
-		}
-		
 		Graphics::FillAndBindNextConstantBuffer(&constData, sizeof(RippleData), D3D11_VERTEX_SHADER, 0);
 	}
 
@@ -532,8 +522,6 @@ void BackgroundRipple::Draw(float deltaTime)
 
 	// -- DRAW TRIANGLES BASED ON INDICES --
 	Graphics::Context->DrawIndexed(indexCount, 0, 0);
-
-	ID3D11ShaderResourceView* unbindPS[1] = { nullptr };
 	Graphics::Context->PSSetShaderResources(0, 1, unbindPS);
 
 	// -- RE-ENABLE Z-BUFFER --

@@ -1,8 +1,7 @@
 #include "ShaderInclude.hlsli"
 
-RWTexture2D<float> prevFrame : register(u2);
-RWTexture2D<float> nextFrame : register(u3);
-SamplerState thisSampler : register(s0);
+RWTexture2D<float> prevFrame : register(u1);
+RWTexture2D<float> nextFrame : register(u2);
 
 void main(RippleVertexToPixel input)
 {
@@ -11,8 +10,7 @@ void main(RippleVertexToPixel input)
     float value = 0;
     
     int2 index = int2(floor(uv.x * (backgroundSize.x - 1)), floor(uv.y * (backgroundSize.y - 1)));
-    index.x = clamp(index.x, 1, backgroundSize.x-2);
-    index.y = clamp(index.y, 1, backgroundSize.y - 2);
+    index = clamp(index, int2(1, 1), int2(backgroundSize.x - 2, backgroundSize.y - 2));
     
     int2 right,left, up, down;
     
@@ -24,9 +22,11 @@ void main(RippleVertexToPixel input)
     down.y -= 1;
     
     value = prevFrame[left] + prevFrame[right] + prevFrame[up] + prevFrame[down];
-    value /= 2.0f;
+    value = value/2.0f;
+    value *= 0.9995f;
+    value = value - nextFrame[index];
     
-    nextFrame[index] = max(value * 0.84, 0);
+    nextFrame[index] = value;
     
     
     

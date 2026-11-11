@@ -144,7 +144,7 @@ void Game::Update(float deltaTime, float totalTime)
 {
 	Game::ImGuiUpdate(deltaTime);
 
-	ripplesBG->Update();
+	ripplesBG->Update(deltaTime);
 
 	// Example input checking: Quit if the escape key is pressed
 	if (Input::KeyDown(VK_ESCAPE))
