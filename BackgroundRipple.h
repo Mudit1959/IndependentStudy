@@ -25,13 +25,14 @@ public:
 	void LoadSampler();
 	void Update(); // check for mouse press here
 	void UpdateBuffers(); // run ripple algorithm here
-	void Draw();
+	void Draw(float deltaTime);
 
 private:
 	float width, height;
 	int frameX, frameY;
 	unsigned char* alphaVals;
 	bool mousePressed;
+	float timePassed;
 
 	unsigned char* previousData;
 	unsigned char* currentData;
@@ -40,15 +41,16 @@ private:
 	
 	Microsoft::WRL::ComPtr<ID3D11Texture2D> previous; 
 	Microsoft::WRL::ComPtr<ID3D11Texture2D> current;
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> rippleClick;
 	
-
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> previousSRV;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> currentSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> rippleClickSRV;
+
+	Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> previousUAV;
+	Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> currentUAV;
 
 	Microsoft::WRL::ComPtr<ID3D11SamplerState> samplerState;
-
-	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> previousRTV;
-	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> currentRTV;
 
 	
 

@@ -170,7 +170,7 @@ void Game::Draw(float deltaTime, float totalTime)
 
 	// Frame DRAW
 	{
-		ripplesBG->Draw();
+		ripplesBG->Draw(deltaTime);
 
 		// -- BRANCHES --
 		//branch->ChangeDistance(deltaTime*30);

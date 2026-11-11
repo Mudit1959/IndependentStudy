@@ -1,35 +1,38 @@
 #include "ShaderInclude.hlsli"
 
-Texture2D previousBuffer : register(t0);
-Texture2D currentBuffer : register(t1);
+Texture2D prevFrame : register(t0);
+RWTexture2D<float4> nextFrame : register(u2);
 SamplerState thisSampler : register(s0);
 
-float4 main(VertexToPixel input) : SV_TARGET
+void main(RippleVertexToPixel input)
 {
-    if (input.uv.r == 0 || input.uv.g == 0)
+    float2 uv = input.uv;
+    int2 backgroundSize = input.backgroundSize;
+    
+    /*
+    float xIncrement = 1.0f / (float) backgroundSize.x;
+    float yIncrement = 1.0f / (float) backgroundSize.y;
+    
+    float2 left = uv - float2(xIncrement, 0);
+    float2 right = uv + float2(xIncrement, 0);
+    float2 up = uv + float2(0, yIncrement);
+    float2 down = uv - float2(0, yIncrement);
+    */
+    
+    int2 index = int2(floor(uv.x * backgroundSize.x - 1), floor(uv.y * backgroundSize.y - 1));
+    if (index.x < 1 || index.y < 1 || uv.y > 0.999 || uv.x > 0.999)
     {
-        return float4(currentBuffer.Sample(thisSampler, input.uv).rg, 0, 0);
+        nextFrame[index] = float4(1, 1, 1, 1);
     }
+    else
+    {
+        nextFrame[index] = prevFrame[index];
+    }
+   
     
-    float2 currentVals = currentBuffer.Sample(thisSampler, input.uv).rg;
-    float2 previousVals = previousBuffer.Sample(thisSampler, input.uv).rg;
     
-    float uIncrement = 1 / input.backgroundSize.x;
-    float vIncrement = 1 / input.backgroundSize.y;
     
-    float2 left, right, top, bottom;
-    left = input.uv - float2(uIncrement, 0);
-    right = input.uv + float2(uIncrement, 0);
-    top = input.uv - float2(0, vIncrement);
-    bottom = input.uv + float2(0, vIncrement);
+    // Indexing is from 0 - backgroundSize - 1
     
-    float acc = previousBuffer.Sample(thisSampler, left).g;
-    acc += previousBuffer.Sample(thisSampler, right).g;
-    acc += previousBuffer.Sample(thisSampler, top).g;
-    acc += previousBuffer.Sample(thisSampler, bottom).g;
-    acc /= 2.0f;
-    currentVals.g *= -1;
-    currentVals.g += acc;
     
-    return float4(currentVals.rg, 0, 0);
 }

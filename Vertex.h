@@ -30,9 +30,5 @@ struct RippleData
 {
 	DirectX::XMFLOAT2 screenSize;
 	DirectX::XMFLOAT2 backgroundSize;
-
-	DirectX::XMFLOAT3 rippleColor;
-	DirectX::XMFLOAT3 backgroundColor;
-
 };
 
