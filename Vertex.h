@@ -33,7 +33,7 @@ struct Ripple_VS_Data
 	DirectX::XMFLOAT4 color;
 };
 
-struct MitreO_PS_Data 
+struct CornerO_PS_Data 
 {
 	float flipX;
 	float flipY;

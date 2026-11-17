@@ -1,8 +1,9 @@
 #include "Branch.h"
 #include <cmath>
 
-Branch::Branch(float x, float y, float d, float endRelX, float endRelY, float endD)
+Branch::Branch(BorderedBox* rb, float x, float y, float d, float endRelX, float endRelY, float endD)
 {
+	renderBox = rb;
 	wholeOffset = DirectX::XMFLOAT2(x, y);
 	nodesDiameter[0] = d; // 
 	nodeCount = 1; // The node count is not 0-indexed -> it is a simple count!
@@ -71,12 +72,13 @@ void Branch::CalculateSummedDistance(int desiredEndCount)
 
 void Branch::CalculateRDAngles() 
 {
-	int counter = 1; // I start my counter from the second node's index, because at the very least I will have two nodes
+	nodesRelativeXY[0] = DirectX::XMFLOAT2(0,0);
+	int counter = 1; // I start my counter from the second node's index now
 	DirectX::XMFLOAT2 xy; // temporary set of coordinates to jump from one node to the next
 
 	while (counter < nodeCount) 
 	{
-		xy = nodesRelativeXY[counter]; // I pick the 
+		xy = nodesRelativeXY[counter]; 
 		relativeDistances[counter - 1] = std::sqrtf(std::powf(xy.x, 2) + std::powf(xy.y, 2));
 		angles[counter - 1] = atan2(xy.y, xy.x);
 		counter++;
@@ -95,7 +97,7 @@ void Branch::ChangeDistance(float deltaTime)
 
 
 
-void Branch::Draw(BorderedBox* renderBox)
+void Branch::Draw()
 {
 	if (!enabled) { return; }
 
@@ -106,17 +108,13 @@ void Branch::Draw(BorderedBox* renderBox)
 	if (distCovered == 0) { enabled = false; toGrow = true; return; }
 	if (distCovered == summedDist)
 	{
-		DrawAll(renderBox);
+		DrawAll();
 		return;
 	}
-
-	
-
-	
 	
 	float distRemaining = distCovered;
 
-	// puplate the array with -1 
+	// populate the array with -1 
 	// handy for knowing when to stop drawing circles!
 	for (int i = 0; i < maxNodes; i++)
 	{
@@ -128,7 +126,7 @@ void Branch::Draw(BorderedBox* renderBox)
 
 	// -- RENDER LINES FIRST ( as they go behind the circles )--
 	renderBox->SetKind(SmoothLine);
-	renderBox->SetInvSmoothIntensity(1.5f);
+	renderBox->SetInvSmoothIntensity(1);
 	renderBox->SetOpacity(1);
 
 	counter = 0;
@@ -205,11 +203,11 @@ void Branch::Draw(BorderedBox* renderBox)
 	}
 }
 
-void Branch::DrawAll(BorderedBox* renderBox)
+void Branch::DrawAll()
 {
 	
-	drawXOffset = 0;
-	drawYOffset = 0;
+	drawXOffset = wholeOffset.x;
+	drawYOffset = wholeOffset.y;
 	counter = 0;
 
 	// -- RENDER LINES FIRST --

@@ -66,6 +66,9 @@
     <ClCompile Include="BackgroundRipple.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="CornersOrnament.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Window.h">
@@ -122,6 +125,9 @@
     <ClInclude Include="BackgroundRipple.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="CornersOrnament.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="PixelShader.hlsl">
@@ -145,7 +151,7 @@
     <FxCompile Include="rippleCalcPixelShader.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="mitreOPixelShader.hlsl">
+    <FxCompile Include="cornerOPixelShader.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>

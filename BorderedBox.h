@@ -19,7 +19,7 @@ enum Kind
 	Box, 
 	SmoothLine, 
 	Circle, 
-	MitreOrnament
+	CornerOrnament
 };
 
 /// <summary>
@@ -36,25 +36,26 @@ public:
 	void CreateGeometry();
 	void LoadShaders();
 	void Draw(float deltaTime);
+	void DrawCornerOrnament(ID3D11ShaderResourceView** address, DirectX::XMFLOAT2 inset, DirectX::XMFLOAT2 size, float deltaTime);
 
 	void SetWidthHeight(float x, float y);
-	void SetScaledWidthHieght(float heightWidthRatio, float finalWidthPixel);
-	void Scale(float scale);
 	void SetXY(float x, float y);
 	void SetColor(float r, float g, float b);
 	void SetAngle(float a);
+	void SetCornerInset(float x, float y);
 	void SetInvSmoothIntensity(float i);
 	void SetOpacity(float opacity);
 	void SetKind(Kind k = Box);
-	void FlipXY(float flipX = 0, float flipY = 0);
+	void FlipXYAndBind(bool flipX = false, bool flipY = false);
 	
 
 private:
 
 	int vertexCount, indexCount, smoothVertCount, smoothIndexCount;
 	float angle;
+	DirectX::XMFLOAT2 inset;
 	Box_VS_Data data;
-	MitreO_PS_Data mitreData;
+	CornerO_PS_Data cornerOData;
 
 	// We use ComPtr because they are smart pointers, that is, they clean up after themselves. 
 	
@@ -79,7 +80,7 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShader;
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> circlePixelShader;
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> smoothLinePixelShader;
-	Microsoft::WRL::ComPtr<ID3D11PixelShader> mitrePixelShader;
+	Microsoft::WRL::ComPtr<ID3D11PixelShader> cornerPixelShader;
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader;
 
 	Microsoft::WRL::ComPtr<ID3D11SamplerState> samplerState;
@@ -91,7 +92,7 @@ private:
 	std::wstring pixelShaderPath;
 	std::wstring smoothLinePSPath;
 	std::wstring circlePSPath;
-	std::wstring mitrePSPath;
+	std::wstring cornerPSPath;
 
 	Kind kind;
 

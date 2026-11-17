@@ -167,6 +167,7 @@
     <ClCompile Include="BackgroundRipple.cpp" />
     <ClCompile Include="BorderedBox.cpp" />
     <ClCompile Include="Branch.cpp" />
+    <ClCompile Include="CornersOrnament.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="Graphics.cpp" />
     <ClCompile Include="ImGui\imgui.cpp" />
@@ -187,6 +188,7 @@
     <ClInclude Include="BorderedBox.h" />
     <ClInclude Include="Branch.h" />
     <ClInclude Include="BufferStructs.h" />
+    <ClInclude Include="CornersOrnament.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="Graphics.h" />
     <ClInclude Include="ImGui\imconfig.h" />
@@ -210,7 +212,7 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
     </FxCompile>
-    <FxCompile Include="mitreOPixelShader.hlsl">
+    <FxCompile Include="cornerOPixelShader.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>

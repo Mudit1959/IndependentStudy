@@ -28,7 +28,7 @@ void main(RippleVertexToPixel input)
     value = value/2.0f;
     // different viable damping intensities
     // 0.9759 - 0.9859 - 0.9899 - 0.9959 - 0.9999
-    value *= 0.98590f;
+    value *= 0.99990f;
     value = value - nextFrame[index];
     
     nextFrame[index] = value;

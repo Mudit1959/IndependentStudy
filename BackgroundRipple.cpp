@@ -289,8 +289,8 @@ void BackgroundRipple::LoadTextures()
 	// -- CREATE SHADER RESOUURCE VIEWS (SRV) -- 
 	
 	// In most cases, the entire resource should be accessed
-	// This is also the default state of a UAV description.
-	// Thus, we can pass 0 or NULL for the UAV description pointer.
+	// This is also the default state of a SRV description.
+	// Thus, we can pass 0 or NULL for the SRV description pointer.
 	// However, I will specify a shader resource view here
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
@@ -302,7 +302,7 @@ void BackgroundRipple::LoadTextures()
 	Graphics::Device->CreateShaderResourceView(previous.Get(), &srvDesc, previousSRV.GetAddressOf());
 
 	// Note, every resource must have its own shader resource view.
-	// These cannot be shared, because even though two buffers (say textures) have the same structure, 
+	// These cannot be shared, because even though two buffers (say textures) may have the same structure, 
 	// THEY DO NOT HOLD THE SAME DATA. 
 	
 	Graphics::Device->CreateShaderResourceView(current.Get(), &srvDesc, currentSRV.GetAddressOf());
@@ -324,7 +324,7 @@ void BackgroundRipple::LoadTextures()
 	v1[2] = currentUAV.Get();
 
 	// -- BOOLEAN FOR SWAPPING BUFFERS --
-	// -- COLOR OF RIPPLE --
+	// -- ALPHA VALUE OF RIPPLE --
 	isCurrent = true;
 	alphaVals = new float[1];
 	alphaVals[0] = (float)4500.0f;

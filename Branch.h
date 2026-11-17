@@ -8,22 +8,29 @@ class Branch
 {
 
 public:
-	Branch(float x, float y, float diameter, float endRelX = 20, float endRelY = -20, float endD = 20);
+	Branch(BorderedBox* rb, float x, float y, float diameter, float endRelX = 20, float endRelY = -20, float endD = 20);
+	
 	void AddNode(float relX, float relY, float diameter);
-	void AddDistance(float deltaTime);
-	void RemoveDistance(float deltaTime);
 	void PopNode();
 	void CalculateSummedDistance(int nodes); 
-	void CalculateMaximumLength();
 	void CalculateRDAngles();
-	void DrawAll(BorderedBox* renderBox);
-	void Draw(BorderedBox* renderBox);
+	void DrawAll();
+	void Draw();
 	void ChangeDistance(float deltaTime);
 
 	inline void SetDistCovered(float d) { distCovered = d > summedDist ? summedDist : d; }
+	inline void SetOffset(float x, float y) 
+	{ 
+		wholeOffset = DirectX::XMFLOAT2(x, y); 
+		float r = nodesDiameter[0] / 2.0f;
+		wholeOffset.x = wholeOffset.x < r ? r : wholeOffset.x;
+		wholeOffset.y = wholeOffset.y < r ? r : wholeOffset.y;
+	}
 	
 	inline void ToggleEnable(bool e) { enabled = e; }
+	inline void ToggleEnable() { enabled = !enabled; }
 	inline void ToggleIncrDecr(bool e) { toGrow = e; }
+	inline void ToggleIncrDecr() { toGrow = !toGrow; }
 	~Branch();
 
 private:
@@ -60,8 +67,8 @@ private:
 
 	// For drawing a partially completed line
 	int counter; // for looping
-	float nodesPartialDiameters[maxNodes]; 
-	float drawXOffset, drawYOffset;
+	float nodesPartialDiameters[maxNodes]; // for tracking the partial diameters of the circles for an incomplete line
+	float drawXOffset, drawYOffset; // for adding relative distances and drawing required lines and circles
 	float currentLineDist; // to size the line at each node
 	int nodesToDraw; // how many circles should I draw?
 	float drawDiameter, drawRadius; // for the circles

@@ -16,7 +16,7 @@ BorderedBox::BorderedBox()
 	vertexShaderPath = L"boxVertexShader.cso"; // Path to Vertex Shader
 	circlePSPath = L"circlePixelShader.cso"; // Path to circle shader
 	smoothLinePSPath = L"smoothLinePixelShader.cso"; // Path to smooth line shader
-	mitrePSPath = L"mitreOPixelShader.cso";
+	cornerPSPath = L"cornerOPixelShader.cso";
 	CreateGeometry();
 	LoadShaders();
 
@@ -31,20 +31,6 @@ void BorderedBox::SetWidthHeight(float x, float y)
 {
 	if (x < 0 || y < 0) { return; }
 	data.boxSize = DirectX::XMFLOAT2(x, y);	
-}
-
-void BorderedBox::SetScaledWidthHieght(float heightWidthRatio, float finalWidthPixel) 
-{
-	if (finalWidthPixel <= 1 || heightWidthRatio < 0) { return; }
-	// The logic for this is I can define the ratio between the width and the height, where width is always 1
-	// I then scale the same ratio to obtain my final size
-	data.boxSize = DirectX::XMFLOAT2(finalWidthPixel, heightWidthRatio * finalWidthPixel);
-}
-
-void BorderedBox::Scale(float scale) 
-{
-	if (scale <= 0) { return; }
-	data.boxSize = DirectX::XMFLOAT2(data.boxSize.x * scale, data.boxSize.y * scale);
 }
 
 void BorderedBox::SetXY(float x, float y)
@@ -75,10 +61,17 @@ void BorderedBox::SetInvSmoothIntensity(float i)
 	data.inverseSmoothIntensity = i;
 }
 
-void BorderedBox::FlipXY(float flipX, float flipY) 
+void BorderedBox::FlipXYAndBind(bool flipX, bool flipY)
 {
-	mitreData.flipX = flipX;
-	mitreData.flipY = flipY;
+	cornerOData.flipX = flipX ? 1 : 0;
+	cornerOData.flipY = flipY ? 1 : 0;
+	
+	data.offset.x = flipX ? data.screenSize.x - inset.x - data.boxSize.x : inset.x;
+	data.offset.y = flipY ? data.screenSize.y - inset.y - data.boxSize.y : inset.y;
+
+	Graphics::FillAndBindNextConstantBuffer(&data, sizeof(Box_VS_Data), D3D11_VERTEX_SHADER, 0);
+	Graphics::FillAndBindNextConstantBuffer(&cornerOData, sizeof(CornerO_PS_Data), D3D11_PIXEL_SHADER, 0);
+	
 }
 
 void BorderedBox::CreateGeometry()
@@ -323,12 +316,12 @@ void BorderedBox::LoadShaders()
 			circlePixelShader.GetAddressOf());	// Where should the D3D11 object be linked once created?
 
 		// ----- Frame Pixel Shader ------
-		D3DReadFileToBlob(FixPath(mitrePSPath).c_str(), &pixelShaderBlob);
+		D3DReadFileToBlob(FixPath(cornerPSPath).c_str(), &pixelShaderBlob);
 		Graphics::Device->CreatePixelShader(
 			pixelShaderBlob->GetBufferPointer(), // Where is the blob located?	
 			pixelShaderBlob->GetBufferSize(),	// How big is the blob?
 			0,
-			mitrePixelShader.GetAddressOf());	// Where should the D3D11 object be linked once created?
+			cornerPixelShader.GetAddressOf());	// Where should the D3D11 object be linked once created?
 
 
 
@@ -441,131 +434,181 @@ void BorderedBox::LoadShaders()
 
 void BorderedBox::Draw(float deltaTime)
 {
-	{	
-		// -- BRIEF --
-		{
-			// Before we draw, we need to know which vertices to render, in what order, in what manner, which shaders to use, at minimum.
-			// 
-			// Several other options such as which faces to draw/cull, whether to fill in objects or render them as wireframes,
-			// whether to use a depth buffer or not, must also be answered 
-			// 
-			// An API state object known as a Rasterizer State Object, holds some of these settings
-			// An API state object is a resource too! Necessary for rendering data. Thus, it follows the same flow as RESOURCE CREATION
-			// Minimum non-zero values for a Rasterizer State Description needed are: cull mode(what to ignore), fill mode(wireframe, solid, etc.), depth buffer (depth clip enable)
+	if (kind == CornerOrnament) { return; }
+
+	// -- BRIEF --
+	{
+		// Before we draw, we need to know which vertices to render, in what order, in what manner, which shaders to use, at minimum.
+		// 
+		// Several other options such as which faces to draw/cull, whether to fill in objects or render them as wireframes,
+		// whether to use a depth buffer or not, must also be answered 
+		// 
+		// An API state object known as a Rasterizer State Object, holds some of these settings
+		// An API state object is a resource too! Necessary for rendering data. Thus, it follows the same flow as RESOURCE CREATION
+		// Minimum non-zero values for a Rasterizer State Description needed are: cull mode(what to ignore), fill mode(wireframe, solid, etc.), depth buffer (depth clip enable)
 			
-			// The Blend state for the output merger has been created and defined already, we simply need to set it. 
-		}
+		// The Blend state for the output merger has been created and defined already, we simply need to set it. 
+	}
 
-		
+	// -- SET TOPOLOGY --
+	{
+		// The kind of shapes we are drawing -> lines, triangles, interjoined strips, etc.
+		Graphics::Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	}
 
-		// -- SET TOPOLOGY --
-		{
-			// The kind of shapes we are drawing -> lines, triangles, interjoined strips, etc.
-			Graphics::Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		}
+	// -- SET INPUT LAYOUT -- 
+	{
+		Graphics::Context->IASetInputLayout(inputLayout.Get());
+	}
 
-		// -- SET INPUT LAYOUT -- 
-		{
-			Graphics::Context->IASetInputLayout(inputLayout.Get());
-		}
-
-		// -- SET SHADERS -- 
-		{
+	// -- SET SHADERS -- 
+	{
 			
-			Graphics::Context->VSSetShader(vertexShader.Get(), 0, 0);
-			switch (kind) 
-			{
-				case Box:
-					Graphics::Context->PSSetShader(pixelShader.Get(), 0, 0);
-					break;
+		Graphics::Context->VSSetShader(vertexShader.Get(), 0, 0);
+		switch (kind) 
+		{
+			case Box:
+				Graphics::Context->PSSetShader(pixelShader.Get(), 0, 0);
+				break;
 
-				case SmoothLine:
-					Graphics::Context->PSSetShader(smoothLinePixelShader.Get(), 0, 0);
-					break;
+			case SmoothLine:
+				Graphics::Context->PSSetShader(smoothLinePixelShader.Get(), 0, 0);
+				break;
 
-				case Circle:
-					Graphics::Context->PSSetShader(circlePixelShader.Get(), 0, 0);
-					break;
-
-				case MitreOrnament:
-					Graphics::Context->PSSetShader(mitrePixelShader.Get(), 0, 0);
-					break;
-
-			}
+			case Circle:
+				Graphics::Context->PSSetShader(circlePixelShader.Get(), 0, 0);
+				break;
+		}
 			
-		}
+	}
 
-		// -- BIND VERTEX AND INDEX BUFFERS --
-		{
-			UINT stride = sizeof(Vertex); // How big is one vertex of this particular object?
-			UINT offset = 0; // Start from the beginning or some bytes after?
+	// -- BIND VERTEX AND INDEX BUFFERS --
+	{
+		UINT stride = sizeof(Vertex); // How big is one vertex of this particular object?
+		UINT offset = 0; // Start from the beginning or some bytes after?
 
-			switch (kind) 
-			{
-				case SmoothLine:
-					Graphics::Context->IASetVertexBuffers(0, 1, smoothLineVertexBuffer.GetAddressOf(), &stride, &offset);
-					Graphics::Context->IASetIndexBuffer(smoothLineIndexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
-					break;
-
-				default:
-					Graphics::Context->IASetVertexBuffers(0, 1, vertexBuffer.GetAddressOf(), &stride, &offset);
-					Graphics::Context->IASetIndexBuffer(indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
-					break;
-			}
-			
-		}
-
-		// -- WRITE TO AND BIND CONSTANT BUFFER --
-		{
-			// Writing data to buffer -> OLD 
-			// D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
-			// Graphics::Context->Map(constantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
-			// memcpy(mappedBuffer.pData, &data, sizeof(BoxData));
-			// Graphics::Context->Unmap(constantBuffer.Get(), 0);
-
-			// Binding buffer -> OLD
-			// Graphics::Context->VSSetConstantBuffers(0, 1, constantBuffer.GetAddressOf());
-			data.screenSize.x = Window::Width();
-			data.screenSize.y = Window::Height();
-			Graphics::FillAndBindNextConstantBuffer(&data, sizeof(Box_VS_Data), D3D11_VERTEX_SHADER, 0);
-		}
-
-		// -- SET SAMPLER STATE (only for mitre corner frames)--
-		{
-			switch (kind) 
-			{
-				case MitreOrnament:
-					Graphics::Context->PSSetSamplers(0, 1, samplerState.GetAddressOf());
-					// Set constant buffer for mitre corners here too!
-					Graphics::FillAndBindNextConstantBuffer(&mitreData, sizeof(MitreO_PS_Data), D3D11_PIXEL_SHADER, 0);
-					break;
-				default:
-					break;
-			}
-		}
-
-		// -- SET OUTPUT MERGER STATE / BLEND STATE --
-		// -- DISABLE DEPTH BUFFER --
-		{
-
-			Graphics::DisableZBuffer();
-			Graphics::Context->OMSetBlendState(blendState.Get(), NULL, 0xffffff);
-		}
-		
-		// -- DRAW TRIANGLES BASED ON INDICES --
 		switch (kind) 
 		{
 			case SmoothLine:
-				Graphics::Context->DrawIndexed(smoothIndexCount,0,0);
+				Graphics::Context->IASetVertexBuffers(0, 1, smoothLineVertexBuffer.GetAddressOf(), &stride, &offset);
+				Graphics::Context->IASetIndexBuffer(smoothLineIndexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 				break;
 
 			default:
-				Graphics::Context->DrawIndexed(indexCount,0,0);
+				Graphics::Context->IASetVertexBuffers(0, 1, vertexBuffer.GetAddressOf(), &stride, &offset);
+				Graphics::Context->IASetIndexBuffer(indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 				break;
 		}
+			
+	}
 
-		// -- RE-ENABLE Z-BUFFER --
-		Graphics::EnableZBuffer();
+	// -- WRITE TO AND BIND CONSTANT BUFFER --
+	{
+		// Writing data to buffer -> OLD 
+		// D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
+		// Graphics::Context->Map(constantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
+		// memcpy(mappedBuffer.pData, &data, sizeof(BoxData));
+		// Graphics::Context->Unmap(constantBuffer.Get(), 0);
+
+		// Binding buffer -> OLD
+		// Graphics::Context->VSSetConstantBuffers(0, 1, constantBuffer.GetAddressOf());
+		data.screenSize.x = Window::Width();
+		data.screenSize.y = Window::Height();
+		Graphics::FillAndBindNextConstantBuffer(&data, sizeof(Box_VS_Data), D3D11_VERTEX_SHADER, 0);
+	}
+
+	// -- SET OUTPUT MERGER STATE / BLEND STATE --
+	// -- DISABLE DEPTH BUFFER --
+	{
+
+		Graphics::DisableZBuffer();
+		Graphics::Context->OMSetBlendState(blendState.Get(), NULL, 0xffffff);
+	}
+		
+	// -- DRAW TRIANGLES BASED ON INDICES --
+	switch (kind) 
+	{
+		case SmoothLine:
+			Graphics::Context->DrawIndexed(smoothIndexCount,0,0);
+			break;
+
+		default:
+			Graphics::Context->DrawIndexed(indexCount,0,0);
+			break;
+	}
+
+	// -- RE-ENABLE Z-BUFFER --
+	Graphics::EnableZBuffer();
+		
+	
+}
+
+void BorderedBox::DrawCornerOrnament(ID3D11ShaderResourceView** address, DirectX::XMFLOAT2 i, DirectX::XMFLOAT2 size, float deltaTime)
+{
+
+	// -- SET TOPOLOGY --
+	{
+		// The kind of shapes we are drawing -> lines, triangles, interjoined strips, etc.
+		Graphics::Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	}
+
+	// -- SET INPUT LAYOUT -- 
+	{
+		Graphics::Context->IASetInputLayout(inputLayout.Get());
+	}
+
+	// -- SET SHADERS -- 
+	{
+		Graphics::Context->VSSetShader(vertexShader.Get(), 0, 0);
+		Graphics::Context->PSSetShader(cornerPixelShader.Get(), 0, 0);
+	}
+
+	// -- SET SHADER RESOURCE AND SAMPLER STATE! --
+	{
+		//Graphics::Context->PSSetShaderResources(0, 1, address);
+		Graphics::Context->PSSetSamplers(0, 1, samplerState.GetAddressOf());
 		
 	}
+
+	// -- BIND VERTEX AND INDEX BUFFERS --
+	{
+		UINT stride = sizeof(Vertex); // How big is one vertex of this particular object?
+		UINT offset = 0; // Start from the beginning or some bytes after?
+		Graphics::Context->IASetVertexBuffers(0, 1, vertexBuffer.GetAddressOf(), &stride, &offset);
+		Graphics::Context->IASetIndexBuffer(indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+	}
+
+	// -- SET OUTPUT MERGER STATE / BLEND STATE --
+	// -- DISABLE DEPTH BUFFER --
+	{
+		Graphics::DisableZBuffer();
+		Graphics::Context->OMSetBlendState(blendState.Get(), NULL, 0xffffff);
+	}
+
+	// -- SETTING UP STRUCT FOR 4 DRAW CALLS--
+	{
+		data.screenSize.x = Window::Width();
+		data.screenSize.y = Window::Height();
+		data.boxSize = size;
+		inset = i;
+	}
+
+	// -- DRAW 4 CORNERS --
+	
+	FlipXYAndBind(false, false);
+	Graphics::Context->DrawIndexed(indexCount, 0, 0);
+	FlipXYAndBind(true, false);
+	Graphics::Context->DrawIndexed(indexCount, 0, 0);
+	FlipXYAndBind(false, true);
+	Graphics::Context->DrawIndexed(indexCount, 0, 0);
+	FlipXYAndBind(true, true);
+	Graphics::Context->DrawIndexed(indexCount, 0, 0);
+
+	// -- UNBIND ANY SHADER RESOURCES --
+	ID3D11SamplerState* null[1] = { nullptr };
+	Graphics::Context->PSSetSamplers(0, 1, null);
+
+	// -- RE-ENABLE Z-BUFFER --
+	Graphics::EnableZBuffer();
+
 }

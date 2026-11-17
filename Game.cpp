@@ -8,6 +8,7 @@
 #include "BorderedBox.h"
 #include "BackgroundRipple.h"
 #include "Branch.h"
+#include "CornersOrnament.h"
 
 // ImGui header files
 #include "ImGui/imgui.h"
@@ -26,6 +27,7 @@ using namespace DirectX;
 Branch* branch;
 BorderedBox* renderBox;
 BackgroundRipple* ripplesBG;
+CornersOrnament* corners;
 
 float whxy[4];
 float objColor[4] = {255, 0, 0, 100};
@@ -42,14 +44,18 @@ Game::Game()
 	whxy[1] = 50;
 	whxy[2] = 100;
 	whxy[3] = 50;
+	
 	renderBox = new BorderedBox(); // ready to use
 	ripplesBG = new BackgroundRipple(600.0f, 600.0f);
+	
+	corners = new CornersOrnament(renderBox);
+	corners->ScaleWithWidth(20);
 
-	branch = new Branch(80, 80, 70, 50, 50, 50);
+	branch = new Branch(renderBox, 80, 80, 70, 50, 50, 50);
 	branch->AddNode(50, -20, 25);
 	branch->AddNode(50, 50, 45);
 	branch->AddNode(50, -20, 45);
-	branch->AddNode(50, 50, 70);
+	branch->AddNode(50, 50, 30);
 	branch->AddNode(50, -20, 30);
 	branch->AddNode(50, 50, 30);
 	branch->AddNode(50, -20, 30);
@@ -96,14 +102,19 @@ void Game::ImGuiBuildUI()
 {
 	ImGui::Begin("Testing...");
 	
-	if (ImGui::TreeNode("Box Constants")) 
+	if (ImGui::TreeNode("Branch"))
 	{
 		static ImGuiSliderFlags flags = ImGuiSliderFlags_None;
-		ImGui::DragFloat("DragFloat (0 -> Screen Width)", &whxy[2], 0.5f, 0.0f, Window::Width(), "%.3f", flags);
-		ImGui::DragFloat("DragFloat (0 -> Screen Height)", &whxy[3], 0.5f, 0.0f, Window::Height(), "%.3f", flags);
-		ImGui::InputFloat("Width", &whxy[0], 0, 0);
-		ImGui::InputFloat("Height", &whxy[1], 0, 0);
-		ImGui::ColorEdit4("Color", &objColor[0], ImGuiColorEditFlags_Float | ImGuiColorEditFlags_None);
+		ImGui::DragFloat("Pos X (0 -> Screen Width)", &whxy[0], 0.5f, 0.0f, Window::Width(), "%.3f", flags);
+		ImGui::DragFloat("Pos Y (0 -> Screen Height)", &whxy[1], 0.5f, 0.0f, Window::Height(), "%.3f", flags);
+		ImGui::TreePop();
+	}
+
+	if (ImGui::TreeNode("Corner Ornament")) 
+	{
+		static ImGuiSliderFlags flags = ImGuiSliderFlags_None;
+		ImGui::DragFloat("Inset X (0 -> 50)", &whxy[2], 0.5f, 0.0f, 50, "%.3f", flags);
+		ImGui::DragFloat("Inset Y (0 -> 50)", &whxy[3], 0.5f, 0.0f, 50, "%.3f", flags);
 		ImGui::TreePop();
 	}
 
@@ -148,6 +159,13 @@ void Game::Update(float deltaTime, float totalTime)
 {
 	Game::ImGuiUpdate(deltaTime);
 
+	if (Input::MouseLeftPress()) 
+	{
+		branch->ToggleIncrDecr();
+	}
+
+	corners->SetInset(whxy[2], whxy[3]);
+	branch->SetOffset(whxy[0], whxy[1]);
 	ripplesBG->Update(deltaTime);
 
 	// Example input checking: Quit if the escape key is pressed
@@ -178,7 +196,9 @@ void Game::Draw(float deltaTime, float totalTime)
 
 		// -- BRANCHES --
 		branch->ChangeDistance(deltaTime*30);
-		branch->Draw(renderBox);
+		branch->Draw();
+
+		corners->Draw(deltaTime);
 	}
 
 	// Frame END

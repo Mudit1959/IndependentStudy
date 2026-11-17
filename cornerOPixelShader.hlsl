@@ -2,7 +2,7 @@
 
 SamplerState thisSampler : register(s0); // Basic Sampler
 
-cbuffer MitreOData : register(b0)
+cbuffer CornerOData : register(b0)
 {
     float flipX;
     float flipY;
@@ -10,6 +10,5 @@ cbuffer MitreOData : register(b0)
 
 float4 main(VertexToPixel data) : SV_TARGET
 {
-    float c = abs(data.uv.x - flipX);
-	return float4(c, c, c, c);
+    return float4(abs(data.uv.x - flipX), abs(data.uv.y - flipY), 0, 1.0f);
 }
