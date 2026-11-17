@@ -16,7 +16,7 @@ BorderedBox::BorderedBox()
 	vertexShaderPath = L"boxVertexShader.cso"; // Path to Vertex Shader
 	circlePSPath = L"circlePixelShader.cso"; // Path to circle shader
 	smoothLinePSPath = L"smoothLinePixelShader.cso"; // Path to smooth line shader
-
+	mitrePSPath = L"mitreOPixelShader.cso";
 	CreateGeometry();
 	LoadShaders();
 
@@ -31,6 +31,20 @@ void BorderedBox::SetWidthHeight(float x, float y)
 {
 	if (x < 0 || y < 0) { return; }
 	data.boxSize = DirectX::XMFLOAT2(x, y);	
+}
+
+void BorderedBox::SetScaledWidthHieght(float heightWidthRatio, float finalWidthPixel) 
+{
+	if (finalWidthPixel <= 1 || heightWidthRatio < 0) { return; }
+	// The logic for this is I can define the ratio between the width and the height, where width is always 1
+	// I then scale the same ratio to obtain my final size
+	data.boxSize = DirectX::XMFLOAT2(finalWidthPixel, heightWidthRatio * finalWidthPixel);
+}
+
+void BorderedBox::Scale(float scale) 
+{
+	if (scale <= 0) { return; }
+	data.boxSize = DirectX::XMFLOAT2(data.boxSize.x * scale, data.boxSize.y * scale);
 }
 
 void BorderedBox::SetXY(float x, float y)
@@ -59,6 +73,12 @@ void BorderedBox::SetInvSmoothIntensity(float i)
 {
 	if (i < 0) { return; }
 	data.inverseSmoothIntensity = i;
+}
+
+void BorderedBox::FlipXY(float flipX, float flipY) 
+{
+	mitreData.flipX = flipX;
+	mitreData.flipY = flipY;
 }
 
 void BorderedBox::CreateGeometry()
@@ -302,6 +322,16 @@ void BorderedBox::LoadShaders()
 			0,
 			circlePixelShader.GetAddressOf());	// Where should the D3D11 object be linked once created?
 
+		// ----- Frame Pixel Shader ------
+		D3DReadFileToBlob(FixPath(mitrePSPath).c_str(), &pixelShaderBlob);
+		Graphics::Device->CreatePixelShader(
+			pixelShaderBlob->GetBufferPointer(), // Where is the blob located?	
+			pixelShaderBlob->GetBufferSize(),	// How big is the blob?
+			0,
+			mitrePixelShader.GetAddressOf());	// Where should the D3D11 object be linked once created?
+
+
+
 	}
 
 	// -- INPUT LAYOUT --
@@ -354,6 +384,19 @@ void BorderedBox::LoadShaders()
 
 		blendStateDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 		Graphics::Device->CreateBlendState(&blendStateDesc, blendState.GetAddressOf());
+	}
+
+	// -- SAMPLER STATE CREATION --
+	{
+		D3D11_SAMPLER_DESC samplerDesc = {};
+		samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
+		samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
+		samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
+		samplerDesc.BorderColor[3] = 0.0f; // Setting alpha of the border color to 0
+		samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+		samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+		Graphics::Device->CreateSamplerState(&samplerDesc, samplerState.GetAddressOf());
 	}
 }
 
@@ -444,6 +487,10 @@ void BorderedBox::Draw(float deltaTime)
 					Graphics::Context->PSSetShader(circlePixelShader.Get(), 0, 0);
 					break;
 
+				case MitreOrnament:
+					Graphics::Context->PSSetShader(mitrePixelShader.Get(), 0, 0);
+					break;
+
 			}
 			
 		}
@@ -480,7 +527,21 @@ void BorderedBox::Draw(float deltaTime)
 			// Graphics::Context->VSSetConstantBuffers(0, 1, constantBuffer.GetAddressOf());
 			data.screenSize.x = Window::Width();
 			data.screenSize.y = Window::Height();
-			Graphics::FillAndBindNextConstantBuffer(&data, sizeof(BoxData), D3D11_VERTEX_SHADER, 0);
+			Graphics::FillAndBindNextConstantBuffer(&data, sizeof(Box_VS_Data), D3D11_VERTEX_SHADER, 0);
+		}
+
+		// -- SET SAMPLER STATE (only for mitre corner frames)--
+		{
+			switch (kind) 
+			{
+				case MitreOrnament:
+					Graphics::Context->PSSetSamplers(0, 1, samplerState.GetAddressOf());
+					// Set constant buffer for mitre corners here too!
+					Graphics::FillAndBindNextConstantBuffer(&mitreData, sizeof(MitreO_PS_Data), D3D11_PIXEL_SHADER, 0);
+					break;
+				default:
+					break;
+			}
 		}
 
 		// -- SET OUTPUT MERGER STATE / BLEND STATE --

@@ -386,8 +386,9 @@ void Graphics::FillAndBindNextConstantBuffer(void* data, unsigned int dataSizeIn
 	// If copying the incoming data will result in an overflow, *circle* back to the beginning BEFORE the copy
 	if (incomingSize + cbOffsetBytes > cbSizeBytes) { cbOffsetBytes = 0; } 
 
-	// 2. Copy the data over, by first mapping the storage size, and them using memcpy
-	// Mapping -> Specify the buffer to write into and the kind of data being written(can be disposed, should not be disposed)
+	// 2. Copy the data over, by first mapping the entire ring buffer - locking it from the GPU until data has been safely copied over
+	// and them using memcpy
+	// Mapping -> Specify the buffer to write into from the CPU. and the kind of writing process(can be disposed, should not be disposed)
 	D3D11_MAPPED_SUBRESOURCE map{};
 	Context->Map(
 		ConstBufferHeap.Get(),
@@ -401,14 +402,14 @@ void Graphics::FillAndBindNextConstantBuffer(void* data, unsigned int dataSizeIn
 	void* uploadAddress = reinterpret_cast<void*>((UINT64)map.pData + cbOffsetBytes);
 	memcpy(uploadAddress, data, dataSizeInBytes);
 
-	// UNMAP
+	// UNMAP -> release the buffer, making it available to the GPU
 	Context->Unmap(ConstBufferHeap.Get(), 0);
 
 	// 3. Tell the GPU the data is ready to use, known as BINDING, by specifying byte boundaries. 
 	// This is where 11.1 version is crucial. I cannot fathom why, I have been told it is
-	// Since we work with HLSL, only 16-byte boundaries need to be taken care of.
+	// Since we work with HLSL, the pixel shader will jump by 16-byte blocks.
 	unsigned int existingConstant = cbOffsetBytes / 16; // How many 16 byte blocks are occupied already?
-	unsigned int incomingConstant = incomingSize / 16; // How many 16 byte blocks will be occupied?
+	unsigned int incomingConstant = incomingSize / 16; // How many 16 byte blocks will be occupied & will need to be accessed by the shader?
 	// Use a switch statement for the vertex and pixel shaders that follow the 16-byte boundary rule.
 	switch (shaderType)
 	{

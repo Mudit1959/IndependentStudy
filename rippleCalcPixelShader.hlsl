@@ -3,6 +3,9 @@
 RWTexture2D<float> prevFrame : register(u1);
 RWTexture2D<float> nextFrame : register(u2);
 
+// background size should be passed as a contant here, rather than being assigned to each vertex and interpolated!
+// same should go for color
+
 void main(RippleVertexToPixel input)
 {
     float2 uv = input.uv;
@@ -23,7 +26,9 @@ void main(RippleVertexToPixel input)
     
     value = prevFrame[left] + prevFrame[right] + prevFrame[up] + prevFrame[down];
     value = value/2.0f;
-    value *= 0.9995f;
+    // different viable damping intensities
+    // 0.9759 - 0.9859 - 0.9899 - 0.9959 - 0.9999
+    value *= 0.98590f;
     value = value - nextFrame[index];
     
     nextFrame[index] = value;

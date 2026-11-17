@@ -18,7 +18,8 @@ enum Kind
 {
 	Box, 
 	SmoothLine, 
-	Circle
+	Circle, 
+	MitreOrnament
 };
 
 /// <summary>
@@ -37,19 +38,23 @@ public:
 	void Draw(float deltaTime);
 
 	void SetWidthHeight(float x, float y);
+	void SetScaledWidthHieght(float heightWidthRatio, float finalWidthPixel);
+	void Scale(float scale);
 	void SetXY(float x, float y);
 	void SetColor(float r, float g, float b);
 	void SetAngle(float a);
 	void SetInvSmoothIntensity(float i);
 	void SetOpacity(float opacity);
 	void SetKind(Kind k = Box);
+	void FlipXY(float flipX = 0, float flipY = 0);
 	
 
 private:
 
 	int vertexCount, indexCount, smoothVertCount, smoothIndexCount;
 	float angle;
-	BoxData data;
+	Box_VS_Data data;
+	MitreO_PS_Data mitreData;
 
 	// We use ComPtr because they are smart pointers, that is, they clean up after themselves. 
 	
@@ -74,7 +79,10 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShader;
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> circlePixelShader;
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> smoothLinePixelShader;
+	Microsoft::WRL::ComPtr<ID3D11PixelShader> mitrePixelShader;
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader;
+
+	Microsoft::WRL::ComPtr<ID3D11SamplerState> samplerState;
 
 	ID3DBlob* vertexShaderBlob;
 	ID3DBlob* pixelShaderBlob;
@@ -83,6 +91,7 @@ private:
 	std::wstring pixelShaderPath;
 	std::wstring smoothLinePSPath;
 	std::wstring circlePSPath;
+	std::wstring mitrePSPath;
 
 	Kind kind;
 

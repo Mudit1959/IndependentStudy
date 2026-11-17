@@ -348,6 +348,9 @@ void BackgroundRipple::LoadSampler()
 
 	// Three kinds of filters : Point filtering, linear filtering, anisotropic filtering
 	// Three stages of filtering : Minification, Magnification, Mipmap reference
+	// Minification is when the pixels making up the object on screen encompass an area smaller than the size of the texture
+	// Magnification is when the pixels making up the object on screen encompass an area larger than the size of the texture
+	// Mipmap reference
 	// Address modes : Border, Clamp, Wrap, Mirror, Mirror Once
 	
 	D3D11_SAMPLER_DESC samplerDesc = {};
@@ -411,6 +414,7 @@ void BackgroundRipple::UpdateBuffers()
 		
 	// -- SET SHADERS -- 
 	{
+		Graphics::Context->VSSetShader(vertexShader.Get(), 0, 0);
 		Graphics::Context->PSSetShader(calcPixelShader.Get(), 0, 0);
 	}
 
@@ -422,7 +426,7 @@ void BackgroundRipple::UpdateBuffers()
 		constData.screenSize.x = Window::Width();
 		constData.screenSize.y = Window::Height();
 
-		Graphics::FillAndBindNextConstantBuffer(&constData, sizeof(RippleData), D3D11_VERTEX_SHADER, 0);
+		Graphics::FillAndBindNextConstantBuffer(&constData, sizeof(Ripple_VS_Data), D3D11_VERTEX_SHADER, 0);
 	}
 
 	// -- SET SHADER RESOURCES & SAMPLER STATE--
@@ -495,7 +499,7 @@ void BackgroundRipple::Draw(float deltaTime)
 		constData.screenSize.x = Window::Width();
 		constData.screenSize.y = Window::Height();
 		
-		Graphics::FillAndBindNextConstantBuffer(&constData, sizeof(RippleData), D3D11_VERTEX_SHADER, 0);
+		Graphics::FillAndBindNextConstantBuffer(&constData, sizeof(Ripple_VS_Data), D3D11_VERTEX_SHADER, 0);
 	}
 
 	// -- SET SHADER RESOURCES & SAMPLER STATE--

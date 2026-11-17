@@ -38,7 +38,7 @@ private:
 	float* previousData;
 	float* currentData;
 	bool isCurrent;
-	RippleData constData;
+	Ripple_VS_Data constData;
 	
 	Microsoft::WRL::ComPtr<ID3D11Texture2D> previous; 
 	Microsoft::WRL::ComPtr<ID3D11Texture2D> current;

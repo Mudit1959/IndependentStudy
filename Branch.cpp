@@ -4,11 +4,12 @@
 Branch::Branch(float x, float y, float d, float endRelX, float endRelY, float endD)
 {
 	wholeOffset = DirectX::XMFLOAT2(x, y);
-	nodesDiameter[0] = d;
-	nodeCount = 1;
+	nodesDiameter[0] = d; // 
+	nodeCount = 1; // The node count is not 0-indexed -> it is a simple count!
 	AddNode(endRelX, endRelY, endD);
-	enabled = false;
-	distCovered = 0;
+	enabled = false; 
+	toGrow = true;
+	distCovered = 0; // We start at no distance covered.
 }
 
 Branch::~Branch() 
@@ -17,39 +18,66 @@ Branch::~Branch()
 
 void Branch::AddNode(float relX, float relY, float diameter)
 {
-	if (nodeCount == 10) 
+	// Note when entering the method, we haven't incremented the node count. 
+	// This is very handy! 
+	// For example, when creating a branch, we create the first node in the constructor, and nodeCount is 1
+	// Now we want to store data (relative position and diameter) pertaining to the second node (index 1). 
+	// Use node count first, before incrementing it. 
+
+	if (nodeCount == maxNodes) // can't have more than a certain number of nodes in the branch
 	{
 		return;
 	}
-
-	nodesRelativeXY[nodeCount] = DirectX::XMFLOAT2(relX, relY);
-	nodesDiameter[nodeCount] = diameter;
+	
+	nodesRelativeXY[nodeCount] = DirectX::XMFLOAT2(relX, relY); 
+	nodesDiameter[nodeCount] = diameter; 
 	nodeCount++;
-	CalculateDistance(nodeCount);
 }
 
 void Branch::PopNode() 
 {
 	if (nodeCount == 2) { return; }
+
 	nodesRelativeXY[nodeCount].x = -1;
 	nodesRelativeXY[nodeCount].y = -1;
 	nodesDiameter[nodeCount] = 0;
+	if (desiredEnd == nodeCount) { CalculateSummedDistance(nodeCount - 1); }
 	nodeCount--;
-	CalculateDistance(nodeCount);
+	
+	
 }
 
-void Branch::CalculateDistance(int nodes)
+/// <summary>
+/// // Used to calculate distance from the start node to the current end node.
+/// </summary>
+void Branch::CalculateSummedDistance(int desiredEndCount)
 {
-	if (nodes < 2) { return; }
-	if (nodes > maxNodes) { return; }
-	int counter = 1;
-	DirectX::XMFLOAT2 xy;
+	// Less than 2 nodes is an invalid setup
+	if (desiredEndCount < 2) { return; }
+	// If we are trying to calculate distance for nodes that do not exist yet, it is invalid 
+	if (desiredEndCount > nodeCount) { return; }
+
 	summedDist = 0;
-	while (counter < nodes) 
+	int counter = 1;
+	desiredEnd = desiredEndCount;
+	while (counter < desiredEndCount)
 	{
-		xy = nodesRelativeXY[counter];
-		relativeDistances[counter-1] = std::sqrtf(std::powf(xy.x, 2) + std::powf(xy.y, 2));
 		summedDist += relativeDistances[counter - 1];
+		counter++;
+	}
+	// To complete the branch, the last node also has to grow, so add its diameter!
+	summedDist += nodesDiameter[desiredEnd - 1];
+}
+
+void Branch::CalculateRDAngles() 
+{
+	int counter = 1; // I start my counter from the second node's index, because at the very least I will have two nodes
+	DirectX::XMFLOAT2 xy; // temporary set of coordinates to jump from one node to the next
+
+	while (counter < nodeCount) 
+	{
+		xy = nodesRelativeXY[counter]; // I pick the 
+		relativeDistances[counter - 1] = std::sqrtf(std::powf(xy.x, 2) + std::powf(xy.y, 2));
 		angles[counter - 1] = atan2(xy.y, xy.x);
 		counter++;
 	}
@@ -57,50 +85,66 @@ void Branch::CalculateDistance(int nodes)
 
 void Branch::ChangeDistance(float deltaTime) 
 {
-	distCovered += enabled ? deltaTime : deltaTime * -1;
+	if (enabled) // Only change if the branch can be displayed
+	{
+		distCovered += toGrow ? deltaTime : deltaTime * -1;
+	}
+	
 }
 
-void Branch::ClampDistance() 
-{
-	float totalDist = summedDist + nodesDiameter[nodeCount - 1];
-	distCovered = distCovered > totalDist ? totalDist : distCovered;
-	distCovered = distCovered < 0 ? 0 : distCovered;
-}
 
-void Branch::SetDistCovered(float d) { distCovered = d; }
+
 
 void Branch::Draw(BorderedBox* renderBox)
 {
-	ClampDistance();
+	if (!enabled) { return; }
 
-	if (!enabled && distCovered == 0) { return; }
+	// Clamp the distance first
+	distCovered = distCovered > summedDist ? summedDist : distCovered;
+	distCovered = distCovered < 0 ? 0 : distCovered;
 
-	if (distCovered == summedDist + nodesDiameter[nodeCount - 1])
+	if (distCovered == 0) { enabled = false; toGrow = true; return; }
+	if (distCovered == summedDist)
 	{
 		DrawAll(renderBox);
 		return;
 	}
 
-	int counter;
-	float xOffset, yOffset;
+	
+
+	
+	
 	float distRemaining = distCovered;
-	float currentLineDist;
 
-	float nodesPartialDiameters[maxNodes] = {-1};
-	int nodesToDraw = 0;
-
-	// -- RENDER LINES FIRST --
-	renderBox->SetKind(SmoothLine);
-	renderBox->SetInvSmoothIntensity(1);
-	renderBox->SetOpacity(1);
-	counter = 0;
-	xOffset = wholeOffset.x;
-	yOffset = wholeOffset.y;
-	while (distRemaining > 0 && counter < nodeCount-1)
+	// puplate the array with -1 
+	// handy for knowing when to stop drawing circles!
+	for (int i = 0; i < maxNodes; i++)
 	{
-		xOffset += nodesRelativeXY[counter].x;
-		yOffset += nodesRelativeXY[counter].y;
+		nodesPartialDiameters[i] = -1;
+	} 
+	
+	nodesToDraw = 0;
+	currentLineDist = 0;
 
+	// -- RENDER LINES FIRST ( as they go behind the circles )--
+	renderBox->SetKind(SmoothLine);
+	renderBox->SetInvSmoothIntensity(1.5f);
+	renderBox->SetOpacity(1);
+
+	counter = 0;
+	drawXOffset = wholeOffset.x;
+	drawYOffset = wholeOffset.y;
+	
+	// The loop should run until we either run out of distance or run out of lines to draw
+	while (distRemaining > 0 && counter < desiredEnd-1)
+	{
+		// Get to the right position
+		// Since relative positions were used, simply keep adding!
+		drawXOffset += nodesRelativeXY[counter].x;
+		drawYOffset += nodesRelativeXY[counter].y;
+
+		// Size the line appropriately
+		// Either the line is definitely covered or it is partially covered
 		if (distRemaining > relativeDistances[counter]) 
 		{
 			currentLineDist = relativeDistances[counter];
@@ -109,14 +153,20 @@ void Branch::Draw(BorderedBox* renderBox)
 		{
 			currentLineDist = distRemaining;
 		}
-
 		distRemaining -= currentLineDist;
+
+		// Depending on the length of the line, we can also determine how big or small the circle should be
+		// The length of the line simply needs to be bigger than the length of the diameter of the circle to draw it entirely, 
+		// otherwise, size it to the line!
 		nodesPartialDiameters[counter] = currentLineDist > nodesDiameter[counter] ? nodesDiameter[counter] : currentLineDist;
 		nodesToDraw++;
+
+		// Draw 2 lines to give the illusion of a bordered line
+		renderBox->SetXY(drawXOffset, drawYOffset); 
+		renderBox->SetAngle(angles[counter]);
+
 		renderBox->SetWidthHeight(currentLineDist, lineThickness + 2);
 		renderBox->SetColor(1, 0, 0);
-		renderBox->SetXY(xOffset, yOffset);
-		renderBox->SetAngle(angles[counter]);
 		renderBox->Draw(0);
 
 		renderBox->SetWidthHeight(currentLineDist, lineThickness);
@@ -126,27 +176,30 @@ void Branch::Draw(BorderedBox* renderBox)
 		counter++;
 	}
 
-	if (counter == nodeCount - 1 && distRemaining > 0) 
+	if (distRemaining > 0) // Meaning we went through all the lines and the last node can be drawn
 	{
-		nodesPartialDiameters[nodeCount - 1] = distRemaining;
+		nodesPartialDiameters[desiredEnd - 1] = distRemaining;
 	}
 
 	// -- RENDER CIRCLES NEXT --
 	renderBox->SetKind(Circle);
 	renderBox->SetOpacity(1);
 	renderBox->SetAngle(0);
-	float drawDiameter, drawRadius, currentDrawDiameter;
+	
+	// Start from the first node again!
+	// Drawing on top of the lines. 
 	counter = 0;
-	xOffset = wholeOffset.x;
-	yOffset = wholeOffset.y;
-	while (counter < nodeCount && nodesPartialDiameters[counter] != -1)
+	drawXOffset = wholeOffset.x;
+	drawYOffset = wholeOffset.y;
+
+	while (nodesPartialDiameters[counter] != -1)
 	{
-		xOffset += nodesRelativeXY[counter].x;
-		yOffset += nodesRelativeXY[counter].y;
+		drawXOffset += nodesRelativeXY[counter].x;
+		drawYOffset += nodesRelativeXY[counter].y;
 		drawDiameter = nodesPartialDiameters[counter];
 		drawRadius = drawDiameter / 2;
 		renderBox->SetWidthHeight(drawDiameter, drawDiameter);
-		renderBox->SetXY(xOffset - drawRadius, yOffset - drawRadius);
+		renderBox->SetXY(drawXOffset - drawRadius, drawYOffset - drawRadius);
 		renderBox->Draw(0);
 		counter++;
 	}
@@ -154,24 +207,26 @@ void Branch::Draw(BorderedBox* renderBox)
 
 void Branch::DrawAll(BorderedBox* renderBox)
 {
-	int counter;
-	float xOffset, yOffset;
+	
+	drawXOffset = 0;
+	drawYOffset = 0;
+	counter = 0;
 
 	// -- RENDER LINES FIRST --
 	renderBox->SetKind(SmoothLine);
 	renderBox->SetInvSmoothIntensity(1);
 	renderBox->SetOpacity(1);
 	counter = 0;
-	xOffset = wholeOffset.x;
-	yOffset = wholeOffset.y;
-	while (counter < nodeCount - 1)
+	drawXOffset = wholeOffset.x;
+	drawYOffset = wholeOffset.y;
+	while (counter < desiredEnd - 1)
 	{
-		xOffset += nodesRelativeXY[counter].x;
-		yOffset += nodesRelativeXY[counter].y;
+		drawXOffset += nodesRelativeXY[counter].x;
+		drawYOffset += nodesRelativeXY[counter].y;
 
 		renderBox->SetWidthHeight(relativeDistances[counter], lineThickness + 2);
 		renderBox->SetColor(1, 0, 0);
-		renderBox->SetXY(xOffset, yOffset);
+		renderBox->SetXY(drawXOffset, drawYOffset);
 		renderBox->SetAngle(angles[counter]);
 		renderBox->Draw(0);
 
@@ -189,16 +244,16 @@ void Branch::DrawAll(BorderedBox* renderBox)
 	renderBox->SetAngle(0);
 	float drawDiameter, drawRadius;
 	counter = 0;
-	xOffset = wholeOffset.x;
-	yOffset = wholeOffset.y;
-	while (counter < nodeCount)
+	drawXOffset = wholeOffset.x;
+	drawYOffset = wholeOffset.y;
+	while (counter < desiredEnd)
 	{
-		xOffset += nodesRelativeXY[counter].x;
-		yOffset += nodesRelativeXY[counter].y;
+		drawXOffset += nodesRelativeXY[counter].x;
+		drawYOffset += nodesRelativeXY[counter].y;
 		drawDiameter = nodesDiameter[counter];
 		drawRadius = drawDiameter / 2;
 		renderBox->SetWidthHeight(drawDiameter, drawDiameter);
-		renderBox->SetXY(xOffset - drawRadius, yOffset - drawRadius);
+		renderBox->SetXY(drawXOffset - drawRadius, drawYOffset - drawRadius);
 		renderBox->Draw(0);
 		counter++;
 	}

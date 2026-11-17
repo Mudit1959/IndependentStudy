@@ -13,7 +13,7 @@ struct Vertex
 	DirectX::XMFLOAT2 UV;			// The X and Y UV coordinates -> goes from 0 to 1 (left to right & up to down)
 };
 
-struct BoxData 
+struct Box_VS_Data 
 {
 	DirectX::XMFLOAT2 offset;
 	DirectX::XMFLOAT2 screenSize;
@@ -26,10 +26,15 @@ struct BoxData
 	float inverseSmoothIntensity; // 0 to 20 -> closer to 20, the sharper the to and bottom edges of the box are.
 };
 
-struct RippleData 
+struct Ripple_VS_Data 
 {
 	DirectX::XMFLOAT2 screenSize;
 	DirectX::XMFLOAT2 backgroundSize;
-	DirectX::XMFLOAT3 color;
+	DirectX::XMFLOAT4 color;
 };
 
+struct MitreO_PS_Data 
+{
+	float flipX;
+	float flipY;
+};

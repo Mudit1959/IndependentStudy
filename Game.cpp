@@ -49,15 +49,19 @@ Game::Game()
 	branch->AddNode(50, -20, 25);
 	branch->AddNode(50, 50, 45);
 	branch->AddNode(50, -20, 45);
-	branch->AddNode(50, 50, 40);
+	branch->AddNode(50, 50, 70);
 	branch->AddNode(50, -20, 30);
 	branch->AddNode(50, 50, 30);
 	branch->AddNode(50, -20, 30);
 	branch->AddNode(50, 50, 20);
 	
 	branch->AddNode(40, -20, 100); // Does not add false node!
-	branch->ToggleEnable(false);
-	branch->SetDistCovered(500);
+	branch->CalculateRDAngles();
+	branch->CalculateSummedDistance(7);
+	branch->ToggleEnable(true);
+	branch->ToggleIncrDecr(false);
+	
+	branch->SetDistCovered(800);
 	//branch->PopNode();
 }
 
@@ -173,8 +177,8 @@ void Game::Draw(float deltaTime, float totalTime)
 		ripplesBG->Draw(deltaTime);
 
 		// -- BRANCHES --
-		//branch->ChangeDistance(deltaTime*30);
-		//branch->Draw(renderBox);
+		branch->ChangeDistance(deltaTime*30);
+		branch->Draw(renderBox);
 	}
 
 	// Frame END

@@ -28,19 +28,24 @@ struct VertexToPixel
 	//  v    v                v
     float4 screenPosition : SV_POSITION; // XYZW position (System Value Position)
     float4 color : COLOR; // RGBA color
+	
     float2 uv : UVCOORD; // UV coordinates -> 0, 1
-    int2 backgroundSize : BACKGROUND_SIZE; // Dimensions of buffer for 
     float smoothIntensity : SMOOTHING; // How close to the edge should blending be?
 };
 
 struct RippleVertexToPixel
 {
+	// Data type
+	//  |
+	//  |   Name          Semantic
+	//  |    |                |
+	//  v    v                v
     float4 screenPosition : SV_POSITION; // XYZW position (System Value Position)
-    
+    float4 color : COLOR; // RGBA color
+	
     float2 uv : UVCOORD; // UV coordinates -> 0, 1
-    int2 backgroundSize : BACKGROUND_SIZE; // Dimensions of buffer for the pixel shader 
-    
-    float3 color : COLOR;
+    int2 backgroundSize : BACKGROUND_SIZE; // Dimensions of buffer for 
+   
 };
 
 
